@@ -1,0 +1,72 @@
+import { Injectable } from '@nestjs/common';
+
+export type LearnerProfile = 'focused' | 'overloaded' | 'distracted' | 'disengaged';
+
+export interface LearnerState {
+    cognitiveLoad: 'low' | 'medium' | 'high';
+    attention: 'low' | 'medium' | 'high';
+    motivation: 'low' | 'medium' | 'high';
+    confidence: number;
+    timestamp: number;
+}
+
+export interface Learner {
+    id: string;
+    name: string;
+    profile: LearnerProfile;
+    state: LearnerState;
+    features: any;
+    currentActivity: string;
+    interventionCount: number;
+}
+
+@Injectable()
+export class LearnerStore {
+    private learners: Map<string, Learner> = new Map();
+
+    constructor() {
+        this.seed();
+    }
+
+    private seed() {
+        const NAMES = [
+            'Amina Benali', 'Youssef El Fassi', 'Fatima Zahra Alaoui', 'Omar Tahiri',
+            'Nadia Bouzid', 'Rachid Cherkaoui', 'Salma Mourtada', 'Hamza Errachidi'
+        ];
+        const PROFILES: LearnerProfile[] = ['focused', 'overloaded', 'distracted', 'disengaged'];
+
+        NAMES.forEach((name, i) => {
+            const id = String(i + 1);
+            this.learners.set(id, {
+                id,
+                name,
+                profile: PROFILES[i % 4],
+                state: {
+                    cognitiveLoad: 'low',
+                    attention: 'high',
+                    motivation: 'high',
+                    confidence: 0.9,
+                    timestamp: Date.now(),
+                },
+                features: {},
+                currentActivity: 'General Introduction',
+                interventionCount: 0,
+            });
+        });
+    }
+
+    getAll(): Learner[] {
+        return Array.from(this.learners.values());
+    }
+
+    getById(id: string): Learner | undefined {
+        return this.learners.get(id);
+    }
+
+    update(id: string, update: Partial<Learner>) {
+        const learner = this.learners.get(id);
+        if (learner) {
+            this.learners.set(id, { ...learner, ...update });
+        }
+    }
+}
