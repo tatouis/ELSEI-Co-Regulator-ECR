@@ -30,8 +30,9 @@ export interface Intervention {
   id: string;
   type: InterventionType;
   title: string;
-  message: string;
-  reason: string; // "Why am I seeing this?"
+  insight: string;
+  actionGuidance: string[];
+  buttons: string[];
   timestamp: number;
   dismissed: boolean;
   learnerId: string;

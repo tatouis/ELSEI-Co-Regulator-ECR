@@ -123,7 +123,6 @@ export default function LandingPage() {
                   <p className="text-sm text-slate-700 mt-0.5">
                     "Before continuing, can you summarize in one sentence what you've just learned?"
                   </p>
-                  <button className="mt-2 text-xs text-violet-500 underline">Why am I seeing this?</button>
                 </div>
               </div>
             </div>
@@ -161,9 +160,7 @@ export default function LandingPage() {
       <footer className="glass border-t border-white/30 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-sm text-slate-500">
-            ELSEI Co-Regulator (ECR) ·{' '}
-            <span className="font-medium">École Normale Supérieure, Abdelmalek Essaâdi University</span>
-            {' '}· Master ELSEI Program · Horizon Research
+            Master ELSEI · Ecole Normale Superieure, Abdelmalek Essaadi University
           </p>
         </div>
       </footer>

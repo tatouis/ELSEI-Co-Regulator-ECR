@@ -58,11 +58,13 @@ export default function PrivacyControls() {
             </div>
 
             <div className="flex items-start gap-2 p-3 rounded-2xl bg-blue-50 border border-blue-100">
-                <Info className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700 leading-relaxed">
-                    Interventions are limited to 1 per 5 minutes and are always dismissible.
-                    Quizzes are never interrupted.
-                </p>
+                <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                <div>
+                    <h4 className="text-sm font-semibold text-blue-800 mb-1">How this support works</h4>
+                    <p className="text-xs text-blue-700 leading-relaxed">
+                        The ECR assistant analyzes your learning activity patterns (not personal or biometric data) to provide optional study support suggestions. You remain in full control and may disable assistance at any time.
+                    </p>
+                </div>
             </div>
         </div>
     );

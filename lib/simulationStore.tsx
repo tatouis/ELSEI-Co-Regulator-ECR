@@ -13,23 +13,21 @@ import { decideIntervention } from '@/lib/policyEngine';
 
 // ─── Sample learner profiles ─────────────────────────────────────────────────
 const ACTIVITIES = [
-    'Module 3 – Cognitive Architectures',
-    'Quiz: Learning Theories',
-    'Video: Self-Regulation Strategies',
-    'Exercise: Metacognitive Mapping',
-    'Reading: xAPI & LMS Integration',
-    'Discussion Forum: Learning Analytics',
+    'M121: E-learning Educational Engineering',
+    'M122: Educational Approaches',
+    'M123: Educational Scripting of an Online Course',
+    'M124: Research Methodology and Statistics',
+    'M125: Fundamentals of Machine Learning',
+    'M126: Study of Learning Management Systems',
 ];
 
 const LEARNER_NAMES = [
-    'Amina Benali',
-    'Youssef El Fassi',
-    'Fatima Zahra Alaoui',
-    'Omar Tahiri',
-    'Nadia Bouzid',
-    'Rachid Cherkaoui',
-    'Salma Mourtada',
-    'Hamza Errachidi',
+    'Mohamed AJAHA',
+    'Nada MAZAR',
+    'Assaouir MOUSSI',
+    'Zainab BOUZIDI',
+    'Hanaa FARIS',
+    'Samia EZOUILI',
 ];
 
 function createLearner(id: string, name: string, profile: LearnerProfile): SimulatedLearner {

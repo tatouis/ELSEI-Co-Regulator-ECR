@@ -6,57 +6,58 @@ import {
 } from './types';
 
 // ─── Intervention content library ───────────────────────────────────────────
-const INTERVENTIONS: Record<InterventionType, { title: string; messages: string[]; reason: string }> = {
+const INTERVENTIONS: Record<InterventionType, { title: string; insight: string; actionGuidance: string[]; buttons: string[] }> = {
     pacing_suggestion: {
-        title: '⏸️ Take a Moment',
-        messages: [
-            "You've been working intensely. A 3-minute break could help consolidate what you've learned.",
-            'Consider reviewing your notes before moving to the next section.',
-            'You seem to be tackling a complex part. Try slowing down and focusing on one concept at a time.',
+        title: 'Cognitive Load Alert',
+        insight: 'You’ve been working intensively on this step for a while, which may indicate a high mental workload.',
+        actionGuidance: [
+            'Break the task into smaller steps',
+            'Review the previous concept briefly',
+            'Take a short 2-minute pause',
+            'Focus on the main objective of this activity'
         ],
-        reason:
-            'The system detected signs of cognitive overload (multiple retries, slow progress). A pacing pause may help.',
+        buttons: ['Show next small step', 'Take a short break', 'Continue anyway']
     },
     reflective_prompt: {
-        title: '💭 Reflect',
-        messages: [
-            "Before continuing, can you summarize in one sentence what you've just learned?",
-            "What's one thing from this section that you're still unsure about?",
-            "How does this material connect to what you already know?",
+        title: 'Focus Support',
+        insight: 'Your interaction pattern suggests your attention may be drifting.',
+        actionGuidance: [
+            'Restate the goal of this activity in one sentence',
+            'Remove potential distractions',
+            'Try the quick checkpoint below'
         ],
-        reason:
-            'Your engagement with the material appeared to drift. A reflective pause supports deeper processing.',
+        buttons: ['Refocus now', 'Continue']
     },
     task_reframing: {
-        title: '🔄 Try a Different Approach',
-        messages: [
-            "If you're stuck, try explaining the concept as if teaching a classmate.",
+        title: 'Try a Different Approach',
+        insight: 'Repeated attempts on the same content may signal a need for a different learning strategy.',
+        actionGuidance: [
+            'If you\'re stuck, try explaining the concept as if teaching a classmate.',
             'Consider approaching this from the examples first, then the theory.',
-            "Break the problem into smaller steps. What's the very first thing you need to know?",
+            'Break the problem into smaller steps. What\'s the very first thing you need to know?'
         ],
-        reason:
-            'Repeated attempts on the same content may signal a need for a different learning strategy.',
+        buttons: ['View example', 'Continue']
     },
     encouragement: {
-        title: "🌟 You're Doing Great",
-        messages: [
-            "Learning is challenging, and you're still here — that takes real dedication.",
-            "Progress isn't always linear.Every attempt builds understanding, even when it's hard.",
-            "You've already come this far. Keep going — you have what it takes.",
+        title: 'Motivation Support',
+        insight: 'Your recent activity level has decreased slightly. A small adjustment may help you progress.',
+        actionGuidance: [
+            'Choose a smaller starting step',
+            'Try a quick success activity',
+            'Review how this task connects to your learning goals'
         ],
-        reason:
-            'Motivation indicators suggested you might benefit from a positive signal to keep going.',
+        buttons: ['Start small step', 'View learning goal', 'Continue']
     },
     help_routing: {
-        title: '🤝 Get Support',
-        messages: [
-            "It looks like you might need some help here. Your instructor's office hours are available.",
-            "The course forum has active discussions on this topic — a peer question might speed things up.",
-            "Consider reaching out: sometimes a quick conversation unlocks what feels stuck.",
+        title: 'Get Support',
+        insight: 'Difficulty indicators suggest this might go beyond what self-regulation alone can address.',
+        actionGuidance: [
+            'It looks like you might need some help here. Your instructor\'s office hours are available.',
+            'The course forum has active discussions on this topic.',
+            'Consider reaching out: sometimes a quick conversation unlocks what feels stuck.'
         ],
-        reason:
-            'Difficulty indicators suggest this might go beyond what self-regulation alone can address. External support may help.',
-    },
+        buttons: ['View forum', 'Ask instructor']
+    }
 };
 
 function pickRandom<T>(arr: T[]): T {
@@ -101,8 +102,9 @@ export function decideIntervention(
         id: generateId(),
         type,
         title: template.title,
-        message: pickRandom(template.messages),
-        reason: template.reason,
+        insight: template.insight,
+        actionGuidance: template.actionGuidance,
+        buttons: template.buttons,
         timestamp: now,
         dismissed: false,
         learnerId: id,

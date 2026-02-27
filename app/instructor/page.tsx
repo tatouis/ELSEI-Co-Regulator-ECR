@@ -8,8 +8,9 @@ import {
     XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import { SimulatedLearner, StateLevel } from '@/lib/types';
-import { Users, Brain, Eye, Zap, TrendingUp, AlertTriangle, BookOpen, X } from 'lucide-react';
+import { Users, Brain, Eye, Zap, TrendingUp, AlertTriangle, BookOpen, X, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
+import { downloadCSV, downloadClassPDF, downloadStudentPDF } from '@/lib/exportHelpers';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const LEVEL_NUM: Record<StateLevel, number> = { low: 0.2, medium: 0.55, high: 0.9 };
@@ -32,11 +33,12 @@ function generateTimeline() {
 }
 
 const HOTSPOTS = [
-    { activity: 'Cognitive Architectures', avgLoad: 0.82, struggle: 68 },
-    { activity: 'xAPI Integration', avgLoad: 0.74, struggle: 55 },
-    { activity: 'Self-Regulation Lab', avgLoad: 0.61, struggle: 42 },
-    { activity: 'Learning Theories Quiz', avgLoad: 0.45, struggle: 28 },
-    { activity: 'Forum Discussion', avgLoad: 0.35, struggle: 18 },
+    { activity: 'M121: E-learning Educational Engineering', avgLoad: 0.82, struggle: 68 },
+    { activity: 'M122: Educational Approaches', avgLoad: 0.74, struggle: 55 },
+    { activity: 'M125: Fundamentals of Machine Learning', avgLoad: 0.61, struggle: 42 },
+    { activity: 'M123: Educational Scripting of an Online Course', avgLoad: 0.45, struggle: 28 },
+    { activity: 'M126: Study of Learning Management Systems', avgLoad: 0.35, struggle: 18 },
+    { activity: 'M124: Research Methodology and Statistics', avgLoad: 0.25, struggle: 10 },
 ];
 
 // ─── Heatmap Cell ────────────────────────────────────────────────────────────
@@ -55,6 +57,7 @@ function HeatCell({ level, name }: { level: StateLevel; name: string }) {
 
 // ─── Learner drilldown modal ──────────────────────────────────────────────────
 function DrilldownModal({ learner, onClose }: { learner: SimulatedLearner; onClose: () => void }) {
+    const [notes, setNotes] = useState('');
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -89,15 +92,33 @@ function DrilldownModal({ learner, onClose }: { learner: SimulatedLearner; onClo
 
                 <div className="rounded-2xl bg-amber-50 border border-amber-100 p-3">
                     <p className="text-xs text-amber-700">
-                        <strong>Current:</strong> {learner.currentActivity}
+                        <strong>Current Activity:</strong> {learner.currentActivity}
                     </p>
                     <p className="text-xs text-amber-600 mt-1">
-                        Retries: {learner.features.retryCount} · Inactivity: {Math.round(learner.features.inactivityStreak)}s
+                        Recent Interventions: {learner.interventionCount}
                     </p>
                 </div>
 
+                <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-700">Instructor Notes</p>
+                    <textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Add observation notes for this learner..."
+                        className="w-full text-xs p-2.5 rounded-xl border border-slate-200 outline-none focus:border-violet-300 resize-none h-20 bg-white"
+                    />
+                </div>
+
+                <button
+                    onClick={() => downloadStudentPDF(learner, notes)}
+                    className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-700 font-medium text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
+                >
+                    <Download className="w-4 h-4 text-violet-600" />
+                    Download student report (PDF)
+                </button>
+
                 <p className="text-[10px] text-slate-400 text-center">
-                    Data is anonymized for display. No identifiable learning content is stored.
+                    Data is anonymized for display. No identifiable content is stored.
                 </p>
             </motion.div>
         </div>
@@ -138,9 +159,19 @@ export default function InstructorDashboard() {
                             <h1 className="text-2xl font-bold text-white">Instructor Analytics</h1>
                             <p className="text-white/70 text-sm">Master ELSEI — Class Cognitive Regulation Overview</p>
                         </div>
-                        <div className="sm:ml-auto text-right">
-                            <p className="text-white/50 text-xs">Learners monitored</p>
-                            <p className="text-white text-3xl font-bold">{learners.length}</p>
+                        <div className="sm:ml-auto flex items-center gap-4">
+                            <div className="flex gap-2">
+                                <button onClick={() => downloadCSV(learners)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-colors border border-white/20 backdrop-blur-sm">
+                                    <FileSpreadsheet className="w-3.5 h-3.5" /> CSV Export
+                                </button>
+                                <button onClick={() => downloadClassPDF(learners)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-colors border border-white/20 backdrop-blur-sm">
+                                    <FileText className="w-3.5 h-3.5" /> PDF Report
+                                </button>
+                            </div>
+                            <div className="text-right border-l border-white/20 pl-4 hidden sm:block">
+                                <p className="text-white/50 text-[10px] uppercase tracking-wider font-bold">Learners</p>
+                                <p className="text-white text-3xl font-bold leading-none mt-1">{learners.length}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -244,8 +275,10 @@ export default function InstructorDashboard() {
                         {HOTSPOTS.map(({ activity, avgLoad, struggle }) => (
                             <div key={activity} className="flex items-center gap-4">
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <p className="text-xs font-medium text-slate-700 truncate">{activity}</p>
+                                    <div className="flex items-center justify-between mb-1 group relative">
+                                        <p className="text-xs font-medium text-slate-700 truncate max-w-[200px] sm:max-w-[280px]" title={activity}>
+                                            {activity}
+                                        </p>
                                         <span className="text-xs text-slate-500 ml-2 flex-shrink-0">{struggle}% struggling</span>
                                     </div>
                                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -280,6 +313,7 @@ export default function InstructorDashboard() {
                                     <th className="text-center text-slate-500 font-medium pb-2 px-2">Attention</th>
                                     <th className="text-center text-slate-500 font-medium pb-2 px-2">Motivation</th>
                                     <th className="text-center text-slate-500 font-medium pb-2 px-2">Interventions</th>
+                                    <th className="text-right text-slate-500 font-medium pb-2 pl-2">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="space-y-1">
@@ -307,9 +341,17 @@ export default function InstructorDashboard() {
                                             <HeatCell level={learner.state.motivation} name="motivation" />
                                         </td>
                                         <td className="px-2 py-1.5 text-center">
-                                            <span className="bg-violet-100 text-violet-700 px-2 py-0.5 rounded-lg">
+                                            <span className="bg-violet-100 text-violet-700 px-2 py-0.5 rounded-lg font-bold">
                                                 {learner.interventionCount}
                                             </span>
+                                        </td>
+                                        <td className="pl-2 py-1.5 text-right w-24">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setSelectedLearner(learner); }}
+                                                className="text-[10px] uppercase tracking-wide font-bold text-violet-600 bg-white border border-violet-200 hover:bg-violet-50 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                                            >
+                                                Report
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
