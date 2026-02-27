@@ -69,16 +69,49 @@ function generateId(): string {
 }
 
 // ─── Decision engine ─────────────────────────────────────────────────────────
+
+// Score from 0 to 10
+function calculateInterventionPriority(learner: SimulatedLearner): number {
+    let score = 0;
+
+    // Risk factors
+    if (learner.state.cognitiveLoad === 'high') score += 4;
+    else if (learner.state.cognitiveLoad === 'medium') score += 1;
+
+    if (learner.state.attention === 'low') score += 4;
+    else if (learner.state.attention === 'medium') score += 1;
+
+    if (learner.state.motivation === 'low') score += 3;
+
+    // Time since last intervention modifier (urgency increases over time if state is bad)
+    if (learner.lastIntervention) {
+        const minsSince = (Date.now() - learner.lastIntervention) / 60000;
+        if (minsSince > 15) score += 2;
+        else if (minsSince < 5) score -= 5; // Suppress if very recent
+    }
+
+    return score;
+}
+
 export function decideIntervention(
     learner: SimulatedLearner
 ): Intervention | null {
-    const { state, isInQuiz, optOut, lastIntervention, id } = learner;
+    const { state, isInQuiz, optOut, lastIntervention, id, features } = learner;
     const now = Date.now();
 
-    // Safety rules
+    // Workflow protection & Safety rules
     if (optOut) return null;
     if (isInQuiz) return null;
+
+    // Prevent interrupting rapid interaction bursts (high navigation speed)
+    if (features.navigationSpeed > 10) return null;
+
+    // Rate limiting (max 1 per 5 mins)
     if (lastIntervention && now - lastIntervention < 5 * 60 * 1000) return null;
+
+    // Check Priority
+    const priority = calculateInterventionPriority(learner);
+    if (priority < 5) return null; // Threshold
 
     // State mapping → intervention type
     let type: InterventionType | null = null;

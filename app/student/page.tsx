@@ -33,6 +33,19 @@ export default function StudentDashboard() {
                 <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-cyan-400/20 blur-3xl" />
 
                 <div className="relative max-w-7xl mx-auto px-4 py-8">
+                    {/* Breadcrumb */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-1.5 text-[10px] font-medium text-white/60 mb-4 tracking-wide uppercase"
+                    >
+                        <span>Instructor</span>
+                        <span>/</span>
+                        <span>Students</span>
+                        <span>/</span>
+                        <span className="text-white/90">{currentLearner.name}</span>
+                    </motion.div>
+
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shadow-lg">
                             <GraduationCap className="w-6 h-6 text-white" />

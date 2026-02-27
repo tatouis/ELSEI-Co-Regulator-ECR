@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSim } from '@/lib/simulationStore';
-import { Play, Pause, Activity, RefreshCw, Filter, FileText, CheckCircle, MessageSquare, Download } from 'lucide-react';
+import { Activity, RefreshCw, Filter, FileText, CheckCircle, MessageSquare, Download } from 'lucide-react';
 
 const MOODLE_EVENTS = [
     { type: 'view', text: 'Viewed course page', icon: Activity, critical: false },
@@ -22,17 +22,29 @@ export default function SimulationControls() {
     const [filterCritical, setFilterCritical] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Auto generate events when playing
+    // Auto generate events when playing with realistic delays
     useEffect(() => {
         if (!control.playing) return;
+
+        // Randomize the chance of an event happening this tick to create realistic gaps
+        const shouldFireEvent = Math.random() > 0.4; // 60% chance per tick length
+        if (!shouldFireEvent) return;
+
         const newEvent = MOODLE_EVENTS[Math.floor(Math.random() * MOODLE_EVENTS.length)];
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-        setEvents(prev => {
-            const updated = [...prev, { id: tick, data: newEvent, time: timeStr }];
-            if (updated.length > 20) return updated.slice(updated.length - 20);
-            return updated;
-        });
+        // Add a slight random delay (0-1500ms) before the event actually appears
+        const delay = Math.random() * 1500;
+
+        const timeout = setTimeout(() => {
+            setEvents(prev => {
+                const updated = [...prev, { id: Date.now(), data: newEvent, time: timeStr }];
+                if (updated.length > 20) return updated.slice(updated.length - 20);
+                return updated;
+            });
+        }, delay);
+
+        return () => clearTimeout(timeout);
     }, [tick, control.playing]);
 
     // Auto scroll
@@ -50,32 +62,37 @@ export default function SimulationControls() {
                 <div>
                     <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                         <Activity className="w-4 h-4 text-emerald-600" />
-                        Moodle Activity Stream (Simulated)
+                        Moodle Activity Stream
                     </h3>
-                    <p className="text-[10px] text-slate-500 max-w-[200px] leading-tight mt-1">
-                        This is a simulated feed for demonstration (not real Moodle data).
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="flex h-2 w-2 relative">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <p className="text-[10px] text-emerald-600 font-medium">Live session</p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                    <RefreshCw className={`w-3 h-3 ${control.playing ? 'animate-spin text-emerald-500' : ''}`} />
-                    Last sync: {control.playing ? 'just now' : '1m ago'}
+                <div className="flex flex-col items-end gap-1">
+                    <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-sm">
+                        {[0.5, 1, 2, 5].map((s) => (
+                            <button
+                                key={s}
+                                onClick={() => setControl({ speed: s })}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${control.speed === s
+                                    ? 'bg-white text-emerald-600 shadow-sm border border-slate-200'
+                                    : 'text-slate-400 hover:text-slate-600'
+                                    }`}
+                            >
+                                {s}×
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                        <RefreshCw className={`w-3 h-3 ${control.playing ? 'animate-spin text-emerald-500' : ''}`} />
+                        Last sync: {control.playing ? 'just now' : '1m ago'}
+                    </div>
                 </div>
             </div>
-
-            {/* Play/Pause Button */}
-            <button
-                onClick={() => setControl({ playing: !control.playing })}
-                className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl font-semibold text-sm transition-all ${control.playing
-                    ? 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-200'
-                    : 'gradient-primary text-white shadow-md hover:opacity-90'
-                    }`}
-            >
-                {control.playing ? (
-                    <><Pause className="w-4 h-4" /> Pause simulated session</>
-                ) : (
-                    <><Play className="w-4 h-4" /> Start simulated session</>
-                )}
-            </button>
 
             {/* Filter */}
             <div className="flex items-center justify-between pt-2 border-t border-slate-100">
@@ -100,7 +117,7 @@ export default function SimulationControls() {
             >
                 {events.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 italic">
-                        No activity yet. Click start to simulate.
+                        Connecting to activity stream...
                     </div>
                 )}
                 <AnimatePresence initial={false}>

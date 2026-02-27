@@ -81,7 +81,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     const [consentGiven, setConsentGiven] = useState(false);
     const [tick, setTick] = useState(0);
     const [control, setControlState] = useState<SimulationControl>({
-        playing: false,
+        playing: true,
         profile: 'overloaded',
         scenario: 'normal',
         speed: 1,
