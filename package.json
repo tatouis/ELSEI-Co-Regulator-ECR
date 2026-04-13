@@ -1,32 +1,37 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "ecr-portal",
+  "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "backend"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint",
+    "backend:dev": "npm run start:dev --workspace=backend",
+    "backend:build": "npm run build --workspace=backend"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "clsx": "^2.1.1",
-    "framer-motion": "^12.34.3",
-    "lucide-react": "^0.575.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "framer-motion": "^12.34.3",
+    "lucide-react": "^0.575.0",
     "recharts": "^3.7.0",
-    "tailwind-merge": "^3.5.0"
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.5.0",
+    "@google/generative-ai": "^0.24.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
+    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "postcss": "^8",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6"
   }
 }
