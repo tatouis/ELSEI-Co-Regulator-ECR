@@ -1,0 +1,13 @@
+{
+  "experimentalServices": {
+    "frontend": {
+      "routePrefix": "/",
+      "framework": "nextjs"
+    },
+    "backend": {
+      "routePrefix": "/api",
+      "framework": "nestjs",
+      "rootDirectory": "backend"
+    }
+  }
+}
