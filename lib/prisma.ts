@@ -5,8 +5,8 @@ import { Pool } from 'pg';
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 let rawUrl = process.env.DATABASE_URL || process.env.POSTGRES_PRISMA_URL || '';
-// Remove strict SSL mode from the URL so our manual rejectUnauthorized takes precedence
-rawUrl = rawUrl.replace('?sslmode=require', '').replace('&sslmode=require', '');
+// Replace sslmode=require while preserving other URL parameters if they exist
+rawUrl = rawUrl.replace('?sslmode=require&', '?').replace('?sslmode=require', '').replace('&sslmode=require', '');
 
 const pool = new Pool({
     connectionString: rawUrl,
