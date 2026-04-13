@@ -8,11 +8,13 @@ import ConsentBanner from '@/components/ConsentBanner';
 import { LearnerStateWidget } from '@/components/LearnerStateWidget';
 import InterventionCard from '@/components/InterventionCard';
 import SimulationControls from '@/components/SimulationControls';
+import DemoControls from '@/components/DemoControls';
 import TransparencyPanel from '@/components/TransparencyPanel';
 import PrivacyControls from '@/components/PrivacyControls';
 import WeeklySummary from '@/components/WeeklySummary';
 import CurrentActivityPanel from '@/components/CurrentActivityPanel';
-import { GraduationCap, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import ECRLogo from '@/components/ECRLogo';
 
 export default function StudentDashboard() {
     const [consentDone, setConsentDone] = useState(false);
@@ -39,16 +41,16 @@ export default function StudentDashboard() {
                         animate={{ opacity: 1, y: 0 }}
                         className="flex items-center gap-1.5 text-[10px] font-medium text-white/60 mb-4 tracking-wide uppercase"
                     >
-                        <span>Instructor</span>
+                        <span>University Abdelmalek Essaadi</span>
                         <span>/</span>
-                        <span>Students</span>
+                        <span>Master ELSEI</span>
                         <span>/</span>
-                        <span className="text-white/90">{currentLearner.name}</span>
+                        <span className="text-white/90">Experimental Monitor</span>
                     </motion.div>
 
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shadow-lg">
-                            <GraduationCap className="w-6 h-6 text-white" />
+                        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shadow-lg overflow-hidden border border-white/30">
+                            <ECRLogo className="w-8 h-8" noBackground />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
@@ -119,6 +121,13 @@ export default function StudentDashboard() {
 
                     {/* RIGHT COLUMN */}
                     <div className="space-y-5">
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.5, delay: 0.05 }}
+                        >
+                            <DemoControls />
+                        </motion.div>
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}

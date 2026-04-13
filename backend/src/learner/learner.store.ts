@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { PrismaService } from '../prisma.service';
 
 export type LearnerProfile = 'focused' | 'overloaded' | 'distracted' | 'disengaged';
 
@@ -21,21 +22,55 @@ export interface Learner {
 }
 
 @Injectable()
-export class LearnerStore {
+export class LearnerStore implements OnModuleInit {
     private learners: Map<string, Learner> = new Map();
 
-    constructor() {
-        this.seed();
+    constructor(private prisma: PrismaService) { }
+
+    async onModuleInit() {
+        await this.seed();
     }
 
-    private seed() {
-        const NAMES = [
+    private async seed() {
+        // Fallback names in case DB query fails or returns empty
+        const FALLBACK_NAMES = [
             'Amina Benali', 'Youssef El Fassi', 'Fatima Zahra Alaoui', 'Omar Tahiri',
             'Nadia Bouzid', 'Rachid Cherkaoui', 'Salma Mourtada', 'Hamza Errachidi'
         ];
         const PROFILES: LearnerProfile[] = ['focused', 'overloaded', 'distracted', 'disengaged'];
 
-        NAMES.forEach((name, i) => {
+        try {
+            const students = await this.prisma.user.findMany({
+                where: { role: 'STUDENT' },
+            });
+
+            if (students.length > 0) {
+                students.forEach((student, i) => {
+                    const id = student.id;
+                    this.learners.set(id, {
+                        id,
+                        name: student.displayName,
+                        profile: PROFILES[i % 4],
+                        state: {
+                            cognitiveLoad: 'low',
+                            attention: 'high',
+                            motivation: 'high',
+                            confidence: 0.9,
+                            timestamp: Date.now(),
+                        },
+                        features: {},
+                        currentActivity: 'General Introduction',
+                        interventionCount: 0,
+                    });
+                });
+                return;
+            }
+        } catch (error) {
+            console.error('Failed to load students from DB for LearnerStore, using fallback:', error);
+        }
+
+        // Fallback
+        FALLBACK_NAMES.forEach((name, i) => {
             const id = String(i + 1);
             this.learners.set(id, {
                 id,

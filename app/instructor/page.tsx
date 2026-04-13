@@ -1,6 +1,7 @@
 'use client';
 
 import { useSim } from '@/lib/simulationStore';
+
 import Navbar from '@/components/Navbar';
 import { motion } from 'framer-motion';
 import {
@@ -8,8 +9,8 @@ import {
     XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import { SimulatedLearner, StateLevel } from '@/lib/types';
-import { Users, Brain, Eye, Zap, TrendingUp, AlertTriangle, BookOpen, X, Download, FileText, FileSpreadsheet } from 'lucide-react';
-import { useState } from 'react';
+import { Users, Brain, Eye, Zap, TrendingUp, AlertTriangle, BookOpen, X, Download, FileText, FileSpreadsheet, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { downloadCSV, downloadClassPDF, downloadStudentPDF } from '@/lib/exportHelpers';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -32,13 +33,17 @@ function generateTimeline() {
     }));
 }
 
+const MOODLE_INSIGHTS = [
+    { title: 'Avg. Navigation Speed', value: '4.2 pages/min', trend: '+12%', status: 'high' },
+    { title: 'Quiz Retry Rate', value: '2.8 attempts', trend: '-5%', status: 'medium' },
+    { title: 'Active Forum Threads', value: '14 topics', trend: '+2', status: 'optimal' },
+    { title: 'Avg. Course Dwell Time', value: '42m 15s', trend: '+18%', status: 'optimal' },
+];
+
 const HOTSPOTS = [
-    { activity: 'M121: E-learning Educational Engineering', avgLoad: 0.82, struggle: 68 },
-    { activity: 'M122: Educational Approaches', avgLoad: 0.74, struggle: 55 },
-    { activity: 'M125: Fundamentals of Machine Learning', avgLoad: 0.61, struggle: 42 },
-    { activity: 'M123: Educational Scripting of an Online Course', avgLoad: 0.45, struggle: 28 },
-    { activity: 'M126: Study of Learning Management Systems', avgLoad: 0.35, struggle: 18 },
-    { activity: 'M124: Research Methodology and Statistics', avgLoad: 0.25, struggle: 10 },
+    { activity: 'M112: PROGRAMMATION EN PYTHON : FONDAMENTAUX', dropoff: 34, struggle: 74 },
+    { activity: 'M125: Fondements d\'apprentissage automatique', dropoff: 21, struggle: 62 },
+    { activity: 'M121: Ingénierie pédagogique d’elearning', dropoff: 12, struggle: 45 },
 ];
 
 // ─── Heatmap Cell ────────────────────────────────────────────────────────────
@@ -55,80 +60,14 @@ function HeatCell({ level, name }: { level: StateLevel; name: string }) {
     );
 }
 
-// ─── Learner drilldown modal ──────────────────────────────────────────────────
-function DrilldownModal({ learner, onClose }: { learner: SimulatedLearner; onClose: () => void }) {
-    const [notes, setNotes] = useState('');
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-            <motion.div
-                className="relative w-full max-w-md glass rounded-3xl p-6 space-y-4"
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-            >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 gradient-primary rounded-2xl flex items-center justify-center text-white font-bold">
-                            {learner.avatar}
-                        </div>
-                        <div>
-                            <p className="font-bold text-slate-800">{learner.name}</p>
-                            <p className="text-xs text-violet-600 capitalize">{learner.profile} profile</p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center">
-                        <X className="w-4 h-4 text-slate-600" />
-                    </button>
-                </div>
+// ─── No internal modals needed as we use dedicated pages ────────────────────
 
-                <div className="grid grid-cols-3 gap-2 text-center">
-                    {(['cognitiveLoad', 'attention', 'motivation'] as const).map((key) => (
-                        <div key={key} className="rounded-xl bg-slate-50 p-2">
-                            <p className="text-xs text-slate-500 capitalize">{key === 'cognitiveLoad' ? 'Cog. Load' : key}</p>
-                            <p className="text-sm font-bold text-slate-800 capitalize">{learner.state[key]}</p>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="rounded-2xl bg-amber-50 border border-amber-100 p-3">
-                    <p className="text-xs text-amber-700">
-                        <strong>Current Activity:</strong> {learner.currentActivity}
-                    </p>
-                    <p className="text-xs text-amber-600 mt-1">
-                        Recent Interventions: {learner.interventionCount}
-                    </p>
-                </div>
-
-                <div className="space-y-2">
-                    <p className="text-xs font-semibold text-slate-700">Instructor Notes</p>
-                    <textarea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Add observation notes for this learner..."
-                        className="w-full text-xs p-2.5 rounded-xl border border-slate-200 outline-none focus:border-violet-300 resize-none h-20 bg-white"
-                    />
-                </div>
-
-                <button
-                    onClick={() => downloadStudentPDF(learner, notes)}
-                    className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-700 font-medium text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
-                >
-                    <Download className="w-4 h-4 text-violet-600" />
-                    Download student report (PDF)
-                </button>
-
-                <p className="text-[10px] text-slate-400 text-center">
-                    Data is anonymized for display. No identifiable content is stored.
-                </p>
-            </motion.div>
-        </div>
-    );
-}
+import { useRouter } from 'next/navigation';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function InstructorDashboard() {
     const { learners } = useSim();
-    const [selectedLearner, setSelectedLearner] = useState<SimulatedLearner | null>(null);
+    const router = useRouter();
     const timeline = generateTimeline();
 
     const highCL = learners.filter((l) => l.state.cognitiveLoad === 'high').length;
@@ -161,11 +100,14 @@ export default function InstructorDashboard() {
                         </div>
                         <div className="sm:ml-auto flex items-center gap-4">
                             <div className="flex gap-2">
+                                <button onClick={() => router.push('/instructor/settings')} className="flex items-center justify-center w-8 h-8 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors border border-white/20 backdrop-blur-sm" title="API Configuration">
+                                    <Settings className="w-4 h-4" />
+                                </button>
                                 <button onClick={() => downloadCSV(learners)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-colors border border-white/20 backdrop-blur-sm">
-                                    <FileSpreadsheet className="w-3.5 h-3.5" /> CSV Export
+                                    <FileSpreadsheet className="w-3.5 h-3.5" /> CSV
                                 </button>
                                 <button onClick={() => downloadClassPDF(learners)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-colors border border-white/20 backdrop-blur-sm">
-                                    <FileText className="w-3.5 h-3.5" /> PDF Report
+                                    <FileText className="w-3.5 h-3.5" /> PDF
                                 </button>
                             </div>
                             <div className="text-right border-l border-white/20 pl-4 hidden sm:block">
@@ -264,44 +206,73 @@ export default function InstructorDashboard() {
                     </div>
                 </div>
 
-                {/* Course Hotspots */}
-                <div className="glass rounded-3xl p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                        <AlertTriangle className="w-4 h-4 text-amber-500" />
-                        <h3 className="font-semibold text-slate-800">Course Hotspots</h3>
-                        <span className="text-xs text-slate-500">Where students struggle most</span>
-                    </div>
-                    <div className="space-y-3">
-                        {HOTSPOTS.map(({ activity, avgLoad, struggle }) => (
-                            <div key={activity} className="flex items-center gap-4">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-1 group relative">
-                                        <p className="text-xs font-medium text-slate-700 truncate max-w-[200px] sm:max-w-[280px]" title={activity}>
-                                            {activity}
-                                        </p>
-                                        <span className="text-xs text-slate-500 ml-2 flex-shrink-0">{struggle}% struggling</span>
+                {/* Lower Charts Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+                    {/* Course Hotspots */}
+                    <div className="glass rounded-3xl p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <AlertTriangle className="w-4 h-4 text-amber-500" />
+                            <h3 className="font-semibold text-slate-800">Moodle Module Bottlenecks</h3>
+                        </div>
+                        <div className="space-y-4">
+                            {HOTSPOTS.map(({ activity, dropoff, struggle }) => (
+                                <div key={activity} className="relative pt-1">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <p className="text-xs font-semibold text-slate-700 truncate pr-4">{activity}</p>
+                                        <div className="text-right">
+                                            <span className="text-[10px] text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded-md">{struggle}% High Load</span>
+                                        </div>
                                     </div>
-                                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                        <motion.div
-                                            className="h-full rounded-full"
-                                            style={{ background: `linear-gradient(90deg, #7c3aed, #ef4444)` }}
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${avgLoad * 100}%` }}
-                                            transition={{ duration: 0.8 }}
-                                        />
+                                    <div className="flex bg-slate-100 h-2 rounded-full overflow-hidden">
+                                        <motion.div className="bg-gradient-to-r from-amber-400 to-red-500" initial={{ width: 0 }} animate={{ width: `${struggle}%` }} transition={{ duration: 1 }} />
                                     </div>
+                                    <p className="text-[10px] text-slate-500 mt-1">Est. Drop-off Risk: {dropoff}%</p>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
+
+                    {/* Moodle Telemetry */}
+                    <div className="glass rounded-3xl p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Zap className="w-4 h-4 text-amber-500" />
+                            <h3 className="font-semibold text-slate-800">Live Moodle Telemetry</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            {MOODLE_INSIGHTS.map((insight) => (
+                                <div key={insight.title} className="bg-white/50 border border-slate-100 rounded-2xl p-4">
+                                    <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">{insight.title}</p>
+                                    <div className="flex items-end justify-between">
+                                        <span className="text-lg font-bold text-slate-800">{insight.value}</span>
+                                        <span className={`text-[10px] font-bold ${insight.trend.startsWith('+') ? 'text-emerald-600' : 'text-red-600'
+                                            }`}>{insight.trend}</span>
+                                    </div>
+                                    <p className="text-[10px] italic text-slate-400 mt-2">v.s last week baseline</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* Class Heatmap */}
                 <div className="glass rounded-3xl p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                        <BookOpen className="w-4 h-4 text-violet-600" />
-                        <h3 className="font-semibold text-slate-800">Class State Heatmap</h3>
-                        <span className="text-xs text-slate-500 ml-auto">Click a learner to drill down (privacy-aware)</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-violet-600" />
+                            <h3 className="font-semibold text-slate-800">Class State Heatmap</h3>
+                            <span className="text-xs text-slate-500 hidden sm:inline-block">— Click a learner to drill down (privacy-aware)</span>
+                        </div>
+                    </div>
+
+                    <div className="mb-4 bg-violet-50/80 border border-violet-100 rounded-2xl p-3 flex gap-3 text-xs text-slate-600 leading-relaxed shadow-sm">
+                        <div className="mt-0.5 text-violet-600">
+                            <Brain className="w-4 h-4" />
+                        </div>
+                        <p>
+                            <span className="font-bold text-violet-800">AI Inference Engine:</span> The system detects <em>Cognitive Load</em>, <em>Attention</em>, and <em>Motivation</em> by tracking raw Moodle telemetry in real-time. This includes: <strong>Time since last action</strong>, <strong>Inactivity streaks</strong>, <strong>Navigation speed (pages/min)</strong>, <strong>Retry counts</strong>, and <strong>Error rates</strong> against normative baseline thresholds.
+                        </p>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -321,7 +292,7 @@ export default function InstructorDashboard() {
                                     <tr
                                         key={learner.id}
                                         className="hover:bg-violet-50/50 rounded-xl cursor-pointer transition-colors"
-                                        onClick={() => setSelectedLearner(learner)}
+                                        onClick={() => router.push(`/instructor/students/${learner.id}`)}
                                     >
                                         <td className="pr-4 py-1.5">
                                             <div className="flex items-center gap-2">
@@ -347,10 +318,10 @@ export default function InstructorDashboard() {
                                         </td>
                                         <td className="pl-2 py-1.5 text-right w-24">
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); setSelectedLearner(learner); }}
+                                                onClick={(e) => { e.stopPropagation(); router.push(`/instructor/students/${learner.id}`); }}
                                                 className="text-[10px] uppercase tracking-wide font-bold text-violet-600 bg-white border border-violet-200 hover:bg-violet-50 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
                                             >
-                                                Report
+                                                Analyze
                                             </button>
                                         </td>
                                     </tr>
@@ -360,14 +331,6 @@ export default function InstructorDashboard() {
                     </div>
                 </div>
             </div>
-
-            {/* Drilldown modal */}
-            {selectedLearner && (
-                <DrilldownModal
-                    learner={selectedLearner}
-                    onClose={() => setSelectedLearner(null)}
-                />
-            )}
         </div>
     );
 }

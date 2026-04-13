@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+}
+
+enum Source {
+  SIMULATION
+  MOODLE_REST
+  MOODLE_XAPI
+}
+
+enum ActivityType {
+  reading
+  quiz
+  forum
+  assignment
+  video
+  other
+}
+
+enum EventType {
+  view
+  attempt
+  submit
+  navigate
+  idle_start
+  idle_end
+  error
+}
+
+enum StateLevel {
+  low
+  medium
+  high
+}
+
+enum InterventionType {
+  pacing_suggestion
+  reflective_prompt
+  task_reframing
+  encouragement
+  help_routing
+  none
+}
+
+enum SuggestedNextStep {
+  dismiss
+  snooze_5m
+  open_forum
+  contact_teacher
+  take_break_2m
+  review_goals
+  none
+}
+
+model User {
+  id           String   @id @default(uuid())
+  moodleUserId String?
+  displayName  String
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  enrollments   Enrollment[]
+  events        Event[]        @relation("ActorEvents")
+  learnerStates LearnerState[] @relation("UserStates")
+  interventions Intervention[] @relation("UserInterventions")
+  consents      Consent[]      @relation("UserConsents")
+}
+
+model Module {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrollments Enrollment[]
+  events      Event[]      @relation("ModuleEvents")
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  userId    String
+  moduleId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+}
+
+model Event {
+  id           String       @id @default(uuid())
+  timestamp    DateTime     @default(now())
+  actorUserId  String
+  source       Source       @default(SIMULATION)
+  moduleCode   String
+  activityType ActivityType
+  eventType    EventType
+  durationSec  Int?
+  attemptNo    Int?
+  success      Boolean?
+  metadata     String? // Sqlite standard JSON stringification
+
+  user   User   @relation("ActorEvents", fields: [actorUserId], references: [id], onDelete: Cascade)
+  module Module @relation("ModuleEvents", fields: [moduleCode], references: [code], onDelete: Cascade)
+
+  @@index([actorUserId, timestamp])
+  @@index([moduleCode, timestamp])
+}
+
+model LearnerState {
+  id               String     @id @default(uuid())
+  timestamp        DateTime   @default(now())
+  userId           String
+  cognitiveLoad    StateLevel
+  attention        StateLevel
+  motivation       StateLevel
+  confidence       Float
+  timeSinceLastSec Int?
+  inactivityStreak Int?
+  navSpeedPgMin    Float?
+  retries          Int?
+  errorRatePct     Float?
+
+  user User @relation("UserStates", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+}
+
+model Intervention {
+  id                String            @id @default(uuid())
+  timestamp         DateTime          @default(now())
+  userId            String
+  action            String
+  interventionType  InterventionType
+  message           String?
+  whyThis           String?
+  suggestedNextStep SuggestedNextStep
+  quizActive        Boolean           @default(false)
+  studentOptedOut   Boolean           @default(false)
+  cooldownRemaining Int?              @default(0)
+  reaction          String?
+
+  user User @relation("UserInterventions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+}
+
+model Consent {
+  id          String    @id @default(uuid())
+  userId      String
+  version     String
+  agreedAt    DateTime  @default(now())
+  withdrawnAt DateTime?
+
+  user User @relation("UserConsents", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

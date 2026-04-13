@@ -3,10 +3,21 @@
 import { useSim } from '@/lib/simulationStore';
 import { motion } from 'framer-motion';
 import { BookOpen, Clock, RefreshCw, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function CurrentActivityPanel() {
     const { currentLearner } = useSim();
-    const sessionMins = Math.round((Date.now() - currentLearner.sessionStart) / 60000);
+    const [sessionMins, setSessionMins] = useState(0);
+
+    useEffect(() => {
+        const update = () => {
+            const mins = Math.round((Date.now() - currentLearner.sessionStart) / 60000);
+            setSessionMins(mins);
+        };
+        update();
+        const interval = setInterval(update, 30000);
+        return () => clearInterval(interval);
+    }, [currentLearner.sessionStart]);
 
     return (
         <div className="glass rounded-3xl p-5 space-y-4">

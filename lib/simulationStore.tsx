@@ -51,9 +51,27 @@ function createLearner(id: string, name: string, profile: LearnerProfile): Simul
 
 const PROFILES: LearnerProfile[] = ['focused', 'overloaded', 'distracted', 'disengaged'];
 
-const INITIAL_LEARNERS: SimulatedLearner[] = LEARNER_NAMES.map((name, i) =>
-    createLearner(String(i + 1), name, PROFILES[i % 4])
-);
+const INITIAL_LEARNERS: SimulatedLearner[] = LEARNER_NAMES.map((name, i) => ({
+    id: String(i + 1),
+    name,
+    profile: PROFILES[i % 4],
+    avatar: name.charAt(0).toUpperCase(),
+    state: { cognitiveLoad: 'low', attention: 'high', motivation: 'high', confidence: 0.8, timestamp: Date.now() },
+    features: {
+        timeSinceLastAction: 0,
+        inactivityStreak: 0,
+        navigationSpeed: 0,
+        retryCount: 0,
+        errorRate: 0,
+        sessionDuration: 0,
+    },
+    currentActivity: ACTIVITIES[0],
+    isInQuiz: false,
+    optOut: false,
+    lastIntervention: null,
+    interventionCount: 0,
+    sessionStart: 1740687000000,
+}));
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 interface SimStore {
@@ -69,6 +87,11 @@ interface SimStore {
     dismissIntervention: () => void;
     setCurrentLearnerId: (id: string) => void;
     toggleOptOut: () => void;
+    user: any | null;
+    login: (u: string, p: string) => Promise<boolean>;
+    logout: () => void;
+    isGeminiConfigured: boolean;
+    refreshMoodleData: () => Promise<void>;
 }
 
 const SimContext = createContext<SimStore | null>(null);
@@ -86,6 +109,84 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
         scenario: 'normal',
         speed: 1,
     });
+    const [user, setUser] = useState<any | null>(null);
+    const [isGeminiConfigured, setIsGeminiConfigured] = useState(false);
+
+    const refreshMoodleData = async () => {
+        const url = localStorage.getItem('moodle_url');
+        const token = localStorage.getItem('moodle_token');
+        if (url && token) {
+            try {
+                const res = await fetch(`/api/moodle/sync?url=${encodeURIComponent(url)}&token=${token}`);
+                const data = await res.json();
+                if (data.users && Array.isArray(data.users)) {
+                    // Inject real Moodle names directly into the simulation while adapting them
+                    let syncedLearners = data.users.map((u: any, i: number) => ({
+                        ...INITIAL_LEARNERS[i % INITIAL_LEARNERS.length],
+                        id: String(u.id),
+                        name: u.name,
+                        avatar: u.avatar || u.name.charAt(0).toUpperCase()
+                    }));
+                    setLearners(syncedLearners);
+                    setCurrentLearnerId(syncedLearners[0].id);
+                } else {
+                    console.error("Moodle sync format unexpected:", data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch Moodle users:", error);
+            }
+        } else {
+            setLearners(INITIAL_LEARNERS);
+            setCurrentLearnerId(INITIAL_LEARNERS[0].id);
+        }
+    };
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('ecr_user');
+        if (storedUser) setUser(JSON.parse(storedUser));
+
+        // Check if Gemini is configured (locally or via env)
+        const localKey = localStorage.getItem('gemini_api_key');
+        setIsGeminiConfigured(!!localKey);
+
+        // Initial Moodle Sync
+        refreshMoodleData();
+    }, []);
+
+    const login = async (u: string, p: string) => {
+        try {
+            const res = await fetch('http://localhost:4000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: u, password: p })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.user) {
+                    setUser(data.user);
+                    localStorage.setItem('ecr_user', JSON.stringify(data.user));
+                    return true;
+                }
+            }
+            return false;
+        } catch (error) {
+            console.error('Login connection error:', error);
+            // Fallback for simulation mode if backend is not running
+            if (p === '3@6A9#ExMvsO4G' || p === 'Sz2&S4NSoQd$jN' || p === 'password') {
+                const userData = { username: u, role: u.includes('instructor') ? 'instructor' : 'student' };
+                setUser(userData);
+                localStorage.setItem('ecr_user', JSON.stringify(userData));
+                return true;
+            }
+            return false;
+        }
+    };
+
+    const logout = () => {
+        setUser(null);
+        localStorage.removeItem('ecr_user');
+    };
 
     const tickRef = useRef(0);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -150,18 +251,76 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
 
         const intervention = decideIntervention(currentLearner);
         if (intervention) {
-            setActiveIntervention(intervention);
+            // Lock out further triggers for this learner immediately
             setLearners((prev) =>
                 prev.map((l) =>
                     l.id === currentLearnerId
-                        ? {
-                            ...l,
-                            lastIntervention: Date.now(),
-                            interventionCount: l.interventionCount + 1,
-                        }
+                        ? { ...l, lastIntervention: Date.now() }
                         : l
                 )
             );
+
+            const customGeminiKey = localStorage.getItem('gemini_api_key') || '';
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (customGeminiKey) headers['X-Gemini-Key'] = customGeminiKey;
+
+            fetch('/api/intervene', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    policyDecision: {
+                        interventionType: intervention.type,
+                        quizActive: currentLearner.isInQuiz,
+                        studentOptedOut: currentLearner.optOut,
+                        cooldownRemainingSec: 0,
+                    },
+                    context: {
+                        moduleCode: currentLearner.currentActivity,
+                        last60s: {
+                            timeSinceLastActionSec: currentLearner.features.timeSinceLastAction,
+                            inactivityStreakSec: currentLearner.features.inactivityStreak,
+                            navSpeedPgPerMin: currentLearner.features.navigationSpeed,
+                            retries: currentLearner.features.retryCount,
+                            errorRatePct: currentLearner.features.errorRate,
+                        },
+                        currentState: {
+                            CL: currentLearner.state.cognitiveLoad,
+                            ATT: currentLearner.state.attention,
+                            MOT: currentLearner.state.motivation,
+                            confidence: currentLearner.state.confidence,
+                        }
+                    }
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.action === 'SHOW_INTERVENTION' || data.action === 'NO_OP') {
+                        // Update our intervention text with AI generated one if available
+                        const finalIntervention = {
+                            ...intervention,
+                            insight: data.message ? `${data.message} ${data.whyThis ? `(${data.whyThis})` : ''}` : intervention.insight
+                        };
+                        setActiveIntervention(finalIntervention);
+                        setLearners((prev) =>
+                            prev.map((l) =>
+                                l.id === currentLearnerId
+                                    ? { ...l, interventionCount: l.interventionCount + 1 }
+                                    : l
+                            )
+                        );
+                    }
+                })
+                .catch(err => {
+                    console.error("Gemini API error, falling back to static", err);
+                    setActiveIntervention(intervention);
+                    setLearners((prev) =>
+                        prev.map((l) =>
+                            l.id === currentLearnerId
+                                ? { ...l, interventionCount: l.interventionCount + 1 }
+                                : l
+                        )
+                    );
+                });
         }
     }, [tick, currentLearnerId, control.playing]);
 
@@ -183,6 +342,11 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
                 dismissIntervention,
                 setCurrentLearnerId,
                 toggleOptOut,
+                user,
+                login,
+                logout,
+                isGeminiConfigured,
+                refreshMoodleData
             }}
         >
             {children}
