@@ -2,16 +2,11 @@
   "name": "ecr-portal",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "backend"
-  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "backend:dev": "npm run start:dev --workspace=backend",
-    "backend:build": "npm run build --workspace=backend"
+    "lint": "next lint"
   },
   "dependencies": {
     "next": "16.1.6",
