@@ -155,7 +155,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
 
     const login = async (u: string, p: string) => {
         try {
-            const res = await fetch('http://localhost:4000/api/auth/login', {
+            const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: u, password: p })
