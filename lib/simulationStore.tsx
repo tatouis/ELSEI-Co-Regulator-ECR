@@ -113,8 +113,12 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     const [isGeminiConfigured, setIsGeminiConfigured] = useState(false);
 
     const refreshMoodleData = async () => {
-        const url = localStorage.getItem('moodle_url');
-        const token = localStorage.getItem('moodle_token');
+        const storedUser = localStorage.getItem('ecr_user');
+        const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+        const prefix = parsedUser?.username ? `_${parsedUser.username}` : '';
+        
+        const url = localStorage.getItem(`moodle_url${prefix}`) || localStorage.getItem('moodle_url');
+        const token = localStorage.getItem(`moodle_token${prefix}`) || localStorage.getItem('moodle_token');
         if (url && token) {
             try {
                 const res = await fetch(`/api/moodle/sync?url=${encodeURIComponent(url)}&token=${token}`);
@@ -145,8 +149,11 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
         const storedUser = localStorage.getItem('ecr_user');
         if (storedUser) setUser(JSON.parse(storedUser));
 
+        const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+        const prefix = parsedUser?.username ? `_${parsedUser.username}` : '';
+
         // Check if Gemini is configured (locally or via env)
-        const localKey = localStorage.getItem('gemini_api_key');
+        const localKey = localStorage.getItem(`gemini_api_key${prefix}`) || localStorage.getItem('gemini_api_key');
         setIsGeminiConfigured(!!localKey);
 
         // Initial Moodle Sync
@@ -260,7 +267,11 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
                 )
             );
 
-            const customGeminiKey = localStorage.getItem('gemini_api_key') || '';
+            
+            const storedUser = localStorage.getItem('ecr_user');
+            const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+            const prefix = parsedUser?.username ? `_${parsedUser.username}` : '';
+            const customGeminiKey = localStorage.getItem(`gemini_api_key${prefix}`) || localStorage.getItem('gemini_api_key') || '';
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (customGeminiKey) headers['X-Gemini-Key'] = customGeminiKey;
 

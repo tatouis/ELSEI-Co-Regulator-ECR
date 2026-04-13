@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
-import { Settings, Server, Brain, Save, ArrowLeft, RefreshCw, Key, ShieldCheck, Database } from 'lucide-react';
+import { Settings, Server, Brain, Save, ArrowLeft, RefreshCw, Key, ShieldCheck, Database, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSim } from '@/lib/simulationStore';
 
@@ -12,28 +12,37 @@ export default function InstructorSettings() {
     const [geminiKey, setGeminiKey] = useState('');
     const [moodleUrl, setMoodleUrl] = useState('');
     const [moodleToken, setMoodleToken] = useState('');
+    const [showMoodleToken, setShowMoodleToken] = useState(false);
+    const [showGeminiKey, setShowGeminiKey] = useState(false);
     const [loading, setLoading] = useState(false);
     const [saved, setSaved] = useState(false);
     const [envConfig, setEnvConfig] = useState<any>(null);
-    const { refreshMoodleData } = useSim();
+    const { user, refreshMoodleData } = useSim();
 
     useEffect(() => {
-        setGeminiKey(localStorage.getItem('gemini_api_key') || '');
-        setMoodleUrl(localStorage.getItem('moodle_url') || '');
-        setMoodleToken(localStorage.getItem('moodle_token') || '');
+        if (!user) return;
+        const prefix = user.username ? `_${user.username}` : '';
+        setGeminiKey(localStorage.getItem(`gemini_api_key${prefix}`) || localStorage.getItem('gemini_api_key') || '');
+        setMoodleUrl(localStorage.getItem(`moodle_url${prefix}`) || localStorage.getItem('moodle_url') || '');
+        setMoodleToken(localStorage.getItem(`moodle_token${prefix}`) || localStorage.getItem('moodle_token') || '');
 
         // Check server-side env config
         fetch('/api/config')
             .then(res => res.json())
             .then(data => setEnvConfig(data))
             .catch(err => console.error("Failed to check server config", err));
-    }, []);
+    }, [user]);
 
     const handleSave = () => {
         setLoading(true);
         // Simulate save delay
         setTimeout(async () => {
-            localStorage.setItem('gemini_api_key', geminiKey);
+            const prefix = user?.username ? `_${user.username}` : '';
+            localStorage.setItem(`gemini_api_key${prefix}`, geminiKey);
+            localStorage.setItem(`moodle_url${prefix}`, moodleUrl);
+            localStorage.setItem(`moodle_token${prefix}`, moodleToken);
+            
+            // Retro-compatibility fallback
             localStorage.setItem('moodle_url', moodleUrl);
             localStorage.setItem('moodle_token', moodleToken);
 
@@ -147,12 +156,19 @@ export default function InstructorSettings() {
                                                     <Key className="h-4 w-4 text-slate-400" />
                                                 </div>
                                                 <input
-                                                    type="password"
+                                                    type={showMoodleToken ? "text" : "password"}
                                                     value={moodleToken}
                                                     onChange={(e) => setMoodleToken(e.target.value)}
-                                                    className="block w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-transparent outline-none transition-all placeholder:text-slate-300 text-sm"
+                                                    className="block w-full pl-10 pr-12 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-transparent outline-none transition-all placeholder:text-slate-300 text-sm"
                                                     placeholder={envConfig?.moodleTokenMasked ? `Active: ${envConfig.moodleTokenMasked}` : "••••••••••••••••"}
                                                 />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowMoodleToken(!showMoodleToken)}
+                                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-violet-600 transition-colors"
+                                                >
+                                                    {showMoodleToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
                                             </div>
                                             <p className="text-[10px] text-slate-400 italic px-1">
                                                 {moodleToken ? 'Local override active.' : envConfig?.moodleConfigured ? `System default detected: ${envConfig.moodleTokenMasked}` : 'Leave blank to use Simulated Mode (Master ELSEI Catalog).'}
@@ -181,12 +197,19 @@ export default function InstructorSettings() {
                                                     <Key className="h-4 w-4 text-slate-400" />
                                                 </div>
                                                 <input
-                                                    type="password"
+                                                    type={showGeminiKey ? "text" : "password"}
                                                     value={geminiKey}
                                                     onChange={(e) => setGeminiKey(e.target.value)}
-                                                    className="block w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-transparent outline-none transition-all placeholder:text-slate-300 text-sm"
+                                                    className="block w-full pl-10 pr-12 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-transparent outline-none transition-all placeholder:text-slate-300 text-sm"
                                                     placeholder={envConfig?.geminiConfigured ? `Active: ${envConfig.geminiKeyMasked}` : "AIzaSy..."}
                                                 />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowGeminiKey(!showGeminiKey)}
+                                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-violet-600 transition-colors"
+                                                >
+                                                    {showGeminiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
                                             </div>
                                             <p className="text-[10px] text-slate-400 italic px-1">
                                                 {geminiKey ? 'Local override active.' : envConfig?.geminiConfigured ? `System default detected: ${envConfig.geminiKeyMasked}` : 'Requires a Gemini API Key.'}
