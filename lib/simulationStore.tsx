@@ -123,21 +123,24 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
             try {
                 const res = await fetch(`/api/moodle/sync?url=${encodeURIComponent(url)}&token=${token}`);
                 const data = await res.json();
-                if (data.users && Array.isArray(data.users)) {
-                    // Inject real Moodle names directly into the simulation while adapting them
-                    let syncedLearners = data.users.map((u: any, i: number) => ({
-                        ...INITIAL_LEARNERS[i % INITIAL_LEARNERS.length],
-                        id: String(u.id),
-                        name: u.name,
-                        avatar: u.avatar || u.name.charAt(0).toUpperCase()
-                    }));
+                if (data.fallback) {
+                    console.warn("Moodle sync fallback triggered:", data.error);
+                    setLearners(INITIAL_LEARNERS);
+                    setCurrentLearnerId(INITIAL_LEARNERS[0].id);
+                } else if (data.users && Array.isArray(data.users)) {
+                    // Moodle real users received
+                    const syncedLearners = data.users;
                     setLearners(syncedLearners);
                     setCurrentLearnerId(syncedLearners[0].id);
                 } else {
                     console.error("Moodle sync format unexpected:", data);
+                    setLearners(INITIAL_LEARNERS);
+                    setCurrentLearnerId(INITIAL_LEARNERS[0].id);
                 }
             } catch (error) {
                 console.error("Failed to fetch Moodle users:", error);
+                setLearners(INITIAL_LEARNERS);
+                setCurrentLearnerId(INITIAL_LEARNERS[0].id);
             }
         } else {
             setLearners(INITIAL_LEARNERS);

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
-import { Settings, Server, Brain, Save, ArrowLeft, RefreshCw, Key, ShieldCheck, Database, Eye, EyeOff } from 'lucide-react';
+import { Settings, Server, Brain, Save, ArrowLeft, RefreshCw, Key, ShieldCheck, Database, Eye, EyeOff, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSim } from '@/lib/simulationStore';
 
@@ -14,6 +14,7 @@ export default function InstructorSettings() {
     const [moodleToken, setMoodleToken] = useState('');
     const [showMoodleToken, setShowMoodleToken] = useState(false);
     const [showGeminiKey, setShowGeminiKey] = useState(false);
+    const [moodleTestResult, setMoodleTestResult] = useState<{status: 'idle'|'testing'|'success'|'error', msg?: string}>({status: 'idle'});
     const [loading, setLoading] = useState(false);
     const [saved, setSaved] = useState(false);
     const [envConfig, setEnvConfig] = useState<any>(null);
@@ -32,6 +33,25 @@ export default function InstructorSettings() {
             .then(data => setEnvConfig(data))
             .catch(err => console.error("Failed to check server config", err));
     }, [user]);
+
+    const handleTestMoodle = async () => {
+        if (!moodleUrl || !moodleToken) {
+            setMoodleTestResult({status: 'error', msg: 'Please enter both URL and Token first.'});
+            return;
+        }
+        setMoodleTestResult({status: 'testing'});
+        try {
+            const res = await fetch(`/api/moodle/test?url=${encodeURIComponent(moodleUrl)}&token=${moodleToken}`);
+            const data = await res.json();
+            if (data.success && data.siteInfo) {
+                setMoodleTestResult({status: 'success', msg: `Connected to: ${data.siteInfo.sitename}`});
+            } else {
+                setMoodleTestResult({status: 'error', msg: data.error || 'Connection failed.'});
+            }
+        } catch (error: any) {
+            setMoodleTestResult({status: 'error', msg: 'Network error while testing connection.'});
+        }
+    };
 
     const handleSave = () => {
         setLoading(true);
@@ -173,6 +193,31 @@ export default function InstructorSettings() {
                                             <p className="text-[10px] text-slate-400 italic px-1">
                                                 {moodleToken ? 'Local override active.' : envConfig?.moodleConfigured ? `System default detected: ${envConfig.moodleTokenMasked}` : 'Leave blank to use Simulated Mode (Master ELSEI Catalog).'}
                                             </p>
+                                        </div>
+
+                                        {/* Test Connection Button & Result */}
+                                        <div className="flex flex-col gap-2 pt-2">
+                                            <button 
+                                                onClick={handleTestMoodle}
+                                                disabled={moodleTestResult.status === 'testing' || !moodleToken || !moodleUrl}
+                                                className="self-start flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                                            >
+                                                {moodleTestResult.status === 'testing' ? <RefreshCw className="w-3 h-3 animate-spin"/> : <Database className="w-3 h-3" />}
+                                                Test Connection
+                                            </button>
+                                            
+                                            {moodleTestResult.status === 'success' && (
+                                                <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100 mt-1">
+                                                    <CheckCircle className="w-4 h-4" />
+                                                    {moodleTestResult.msg}
+                                                </div>
+                                            )}
+                                            {moodleTestResult.status === 'error' && (
+                                                <div className="flex items-center gap-2 text-xs font-bold text-rose-600 bg-rose-50 px-3 py-2 rounded-lg border border-rose-100 mt-1">
+                                                    <AlertTriangle className="w-4 h-4" />
+                                                    {moodleTestResult.msg}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

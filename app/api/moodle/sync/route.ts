@@ -14,10 +14,10 @@ export async function GET(request: Request) {
     }
 
     try {
-        const cleanUrl = moodleUrl.replace(/\/$/, ""); // Remove trailing slash if any
+        const cleanUrl = moodleUrl.replace(/\/$/, "");
 
-        // 1. Try to fetch enrolled users for the given course
-        const usersEndpoint = `${cleanUrl}/webservice/rest/server.php?wstoken=${moodleToken}&wsfunction=core_enrol_get_enrolled_users&moodlewsrestformat=json&courseid=${courseId}`;
+        // 1. Fetch site users safely. We use email=% as a wildcard trick to get all users.
+        const usersEndpoint = `${cleanUrl}/webservice/rest/server.php?wstoken=${moodleToken}&wsfunction=core_user_get_users&moodlewsrestformat=json&criteria[0][key]=email&criteria[0][value]=%25`;
 
         const response = await fetch(usersEndpoint);
 
@@ -25,27 +25,39 @@ export async function GET(request: Request) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
+        let data = await response.json();
 
-        // Handle Moodle errors (Moodle API often returns 200 OK but with an error object)
         if (data && data.exception) {
-            return NextResponse.json({ error: data.message, code: data.errorcode }, { status: 500 });
+            return NextResponse.json({ fallback: true, error: data.message, code: data.errorcode }, { status: 200 });
         }
 
-        if (!Array.isArray(data)) {
-            return NextResponse.json({ error: 'Unexpected Moodle API response format' }, { status: 500 });
+        // core_user_get_users returns { users: [ ... ] } usually, or an array depending on the Moodle version.
+        let usersArray = [];
+        if (Array.isArray(data)) {
+            usersArray = data;
+        } else if (data.users && Array.isArray(data.users)) {
+            usersArray = data.users;
+        } else {
+            return NextResponse.json({ fallback: true, error: 'Unexpected Moodle API response format' }, { status: 200 });
+        }
+
+        // Filter out guest account or admin if desired, but we can just use them all
+        const validUsers = usersArray.filter((u: any) => !u.deleted && u.username !== 'guest');
+
+        if (validUsers.length === 0) {
+             return NextResponse.json({ fallback: true, error: 'No active students found in Moodle.' }, { status: 200 });
         }
 
         // 2. Map Moodle users to our SimulatedLearner structure (proxy data for the demo)
-        const mappedUsers = data.map((user: any, index: number) => {
+        const mappedUsers = validUsers.map((user: any, index: number) => {
             const profiles = ['focused', 'overloaded', 'distracted', 'disengaged'];
             const assignProfile = profiles[index % 4];
 
             return {
                 id: String(user.id),
-                name: user.fullname || `${user.firstname} ${user.lastname}`,
+                name: user.fullname || `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.username,
                 profile: assignProfile,
-                avatar: user.firstname ? user.firstname.charAt(0).toUpperCase() : 'M',
+                avatar: user.firstname ? user.firstname.charAt(0).toUpperCase() : (user.username?.charAt(0).toUpperCase() || 'M'),
                 state: { cognitiveLoad: 'low', attention: 'high', motivation: 'high', confidence: 0.8, timestamp: Date.now() },
                 features: {
                     timeSinceLastAction: 0,
@@ -55,7 +67,7 @@ export async function GET(request: Request) {
                     errorRate: 0,
                     sessionDuration: 0,
                 },
-                currentActivity: 'Moodle Synced Activity',
+                currentActivity: 'Moodle Active Course',
                 isInQuiz: false,
                 optOut: false,
                 lastIntervention: null,
@@ -64,7 +76,7 @@ export async function GET(request: Request) {
             };
         });
 
-        return NextResponse.json({ users: mappedUsers });
+        return NextResponse.json({ success: true, users: mappedUsers });
 
     } catch (error: any) {
         console.error("Moodle Sync Error:", error);
