@@ -14,11 +14,11 @@ async function fetchMoodle(cleanUrl: string, token: string, wsfunction: string, 
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
-    const moodleUrl = searchParams.get('url');
-    const moodleToken = searchParams.get('token');
+    const moodleUrl = searchParams.get('url') || process.env.MOODLE_URL;
+    const moodleToken = searchParams.get('token') || process.env.MOODLE_TOKEN;
 
     if (!moodleUrl || !moodleToken) {
-        return NextResponse.json({ success: false, error: 'Missing credentials' }, { status: 400 });
+        return NextResponse.json({ fallback: true, error: 'Missing credentials. Check environment variables or local settings.' }, { status: 200 });
     }
 
     try {

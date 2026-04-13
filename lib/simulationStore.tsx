@@ -122,30 +122,30 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
         
         const url = localStorage.getItem(`moodle_url${prefix}`) || localStorage.getItem('moodle_url');
         const token = localStorage.getItem(`moodle_token${prefix}`) || localStorage.getItem('moodle_token');
-        if (url && token) {
-            try {
-                const res = await fetch(`/api/moodle/sync?url=${encodeURIComponent(url)}&token=${token}`);
-                const data = await res.json();
-                if (data.fallback) {
-                    console.warn("Moodle sync fallback triggered:", data.error);
-                    setLearners(INITIAL_LEARNERS);
-                    setCurrentLearnerId(INITIAL_LEARNERS[0].id);
-                } else if (data.users && Array.isArray(data.users)) {
-                    // Moodle real users received
-                    const syncedLearners = data.users;
-                    setLearners(syncedLearners);
-                    setCurrentLearnerId(syncedLearners[0].id);
-                } else {
-                    console.error("Moodle sync format unexpected:", data);
-                    setLearners(INITIAL_LEARNERS);
-                    setCurrentLearnerId(INITIAL_LEARNERS[0].id);
-                }
-            } catch (error) {
-                console.error("Failed to fetch Moodle users:", error);
+        
+        try {
+            const queryParams = new URLSearchParams();
+            if (url) queryParams.append('url', url);
+            if (token) queryParams.append('token', token);
+            
+            const res = await fetch(`/api/moodle/sync?${queryParams.toString()}`);
+            const data = await res.json();
+            if (data.fallback) {
+                console.warn("Moodle sync fallback triggered:", data.error);
+                setLearners(INITIAL_LEARNERS);
+                setCurrentLearnerId(INITIAL_LEARNERS[0].id);
+            } else if (data.users && Array.isArray(data.users)) {
+                // Moodle real users received
+                const syncedLearners = data.users;
+                setLearners(syncedLearners);
+                setCurrentLearnerId(syncedLearners[0].id);
+            } else {
+                console.error("Moodle sync format unexpected:", data);
                 setLearners(INITIAL_LEARNERS);
                 setCurrentLearnerId(INITIAL_LEARNERS[0].id);
             }
-        } else {
+        } catch (error) {
+            console.error("Failed to fetch Moodle users:", error);
             setLearners(INITIAL_LEARNERS);
             setCurrentLearnerId(INITIAL_LEARNERS[0].id);
         }
