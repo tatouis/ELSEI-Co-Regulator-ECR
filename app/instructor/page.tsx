@@ -66,19 +66,27 @@ import { useRouter } from 'next/navigation';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function InstructorDashboard() {
-    const { learners } = useSim();
+    const { learners, courseFilter, setCourseFilter } = useSim();
     const router = useRouter();
     const timeline = generateTimeline();
 
-    const highCL = learners.filter((l) => l.state.cognitiveLoad === 'high').length;
-    const lowAtt = learners.filter((l) => l.state.attention === 'low').length;
-    const lowMot = learners.filter((l) => l.state.motivation === 'low').length;
-    const totalInterventions = learners.reduce((s, l) => s + l.interventionCount, 0);
+    // Aggregates for filter
+    const availableCourses = Array.from(new Set(learners.filter(l => l.courseId).map(l => l.courseId)));
+    const getCourseName = (id: string) => learners.find(l => l.courseId === id)?.courseName || id;
+
+    const filteredLearners = courseFilter 
+        ? learners.filter(l => l.courseId === courseFilter)
+        : learners;
+
+    const highCL = filteredLearners.filter((l) => l.state.cognitiveLoad === 'high').length;
+    const lowAtt = filteredLearners.filter((l) => l.state.attention === 'low').length;
+    const lowMot = filteredLearners.filter((l) => l.state.motivation === 'low').length;
+    const totalInterventions = filteredLearners.reduce((s, l) => s + l.interventionCount, 0);
 
     const motivationDist = [
-        { name: 'High', value: learners.filter((l) => l.state.motivation === 'high').length, color: '#10b981' },
-        { name: 'Medium', value: learners.filter((l) => l.state.motivation === 'medium').length, color: '#f59e0b' },
-        { name: 'Low Risk', value: learners.filter((l) => l.state.motivation === 'low').length, color: '#ef4444' },
+        { name: 'High', value: filteredLearners.filter((l) => l.state.motivation === 'high').length, color: '#10b981' },
+        { name: 'Medium', value: filteredLearners.filter((l) => l.state.motivation === 'medium').length, color: '#f59e0b' },
+        { name: 'Low Risk', value: filteredLearners.filter((l) => l.state.motivation === 'low').length, color: '#ef4444' },
     ];
 
     return (
@@ -106,13 +114,27 @@ export default function InstructorDashboard() {
                                 <button onClick={() => downloadCSV(learners)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-colors border border-white/20 backdrop-blur-sm">
                                     <FileSpreadsheet className="w-3.5 h-3.5" /> CSV
                                 </button>
-                                <button onClick={() => downloadClassPDF(learners)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-colors border border-white/20 backdrop-blur-sm">
+                                <button onClick={() => downloadClassPDF(filteredLearners)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-colors border border-white/20 backdrop-blur-sm">
                                     <FileText className="w-3.5 h-3.5" /> PDF
                                 </button>
+                                {availableCourses.length > 0 && (
+                                    <select 
+                                        value={courseFilter || ''}
+                                        onChange={(e) => setCourseFilter(e.target.value || null)}
+                                        className="bg-white/10 text-white text-xs px-2 py-1.5 border border-white/20 rounded-xl outline-none backdrop-blur-sm cursor-pointer"
+                                    >
+                                        <option value="" className="text-slate-800">Global Overview</option>
+                                        {availableCourses.map(id => (
+                                            <option key={id as string} value={id as string} className="text-slate-800">
+                                                {getCourseName(id as string)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
                             <div className="text-right border-l border-white/20 pl-4 hidden sm:block">
                                 <p className="text-white/50 text-[10px] uppercase tracking-wider font-bold">Learners</p>
-                                <p className="text-white text-3xl font-bold leading-none mt-1">{learners.length}</p>
+                                <p className="text-white text-3xl font-bold leading-none mt-1">{filteredLearners.length}</p>
                             </div>
                         </div>
                     </div>
@@ -124,9 +146,9 @@ export default function InstructorDashboard() {
                 {/* KPI Row */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {[
-                        { icon: Brain, label: 'High Cognitive Load', value: highCL, total: learners.length, color: 'text-red-600', bg: 'bg-red-50' },
-                        { icon: Eye, label: 'Low Attention', value: lowAtt, total: learners.length, color: 'text-amber-600', bg: 'bg-amber-50' },
-                        { icon: Zap, label: 'Low Motivation', value: lowMot, total: learners.length, color: 'text-orange-600', bg: 'bg-orange-50' },
+                        { icon: Brain, label: 'High Cognitive Load', value: highCL, total: filteredLearners.length, color: 'text-red-600', bg: 'bg-red-50' },
+                        { icon: Eye, label: 'Low Attention', value: lowAtt, total: filteredLearners.length, color: 'text-amber-600', bg: 'bg-amber-50' },
+                        { icon: Zap, label: 'Low Motivation', value: lowMot, total: filteredLearners.length, color: 'text-orange-600', bg: 'bg-orange-50' },
                         { icon: TrendingUp, label: 'Interventions Today', value: totalInterventions, total: null, color: 'text-violet-600', bg: 'bg-violet-50' },
                     ].map(({ icon: Icon, label, value, total, color, bg }) => (
                         <motion.div
@@ -276,25 +298,25 @@ export default function InstructorDashboard() {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
+                        <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr>
-                                    <th className="text-left text-slate-500 font-medium pb-2 pr-4">Learner</th>
-                                    <th className="text-center text-slate-500 font-medium pb-2 px-2">Cog. Load</th>
-                                    <th className="text-center text-slate-500 font-medium pb-2 px-2">Attention</th>
-                                    <th className="text-center text-slate-500 font-medium pb-2 px-2">Motivation</th>
-                                    <th className="text-center text-slate-500 font-medium pb-2 px-2">Interventions</th>
-                                    <th className="text-right text-slate-500 font-medium pb-2 pl-2">Actions</th>
+                                <tr className="border-b border-slate-100">
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Learner</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cog. Load</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Attention</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Motivation</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Interventions</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="space-y-1">
-                                {learners.map((learner) => (
+                            <tbody className="divide-y divide-slate-50">
+                                {filteredLearners.map((learner) => (
                                     <tr
                                         key={learner.id}
                                         className="hover:bg-violet-50/50 rounded-xl cursor-pointer transition-colors"
                                         onClick={() => router.push(`/instructor/students/${learner.id}`)}
                                     >
-                                        <td className="pr-4 py-1.5">
+                                        <td className="pr-4 py-3">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-6 h-6 rounded-lg gradient-primary flex items-center justify-center text-white text-[10px] font-bold">
                                                     {learner.avatar}

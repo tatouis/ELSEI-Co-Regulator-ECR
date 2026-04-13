@@ -92,6 +92,8 @@ interface SimStore {
     logout: () => void;
     isGeminiConfigured: boolean;
     refreshMoodleData: () => Promise<void>;
+    courseFilter: string | null;
+    setCourseFilter: (id: string | null) => void;
 }
 
 const SimContext = createContext<SimStore | null>(null);
@@ -99,6 +101,7 @@ const SimContext = createContext<SimStore | null>(null);
 export function SimulationProvider({ children }: { children: ReactNode }) {
     const [learners, setLearners] = useState<SimulatedLearner[]>(INITIAL_LEARNERS);
     const [currentLearnerId, setCurrentLearnerId] = useState('1');
+    const [courseFilter, setCourseFilter] = useState<string | null>(null);
     const [activeIntervention, setActiveIntervention] = useState<Intervention | null>(null);
     const [interventionHistory, setInterventionHistory] = useState<Intervention[]>([]);
     const [consentGiven, setConsentGiven] = useState(false);
@@ -360,7 +363,9 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
                 login,
                 logout,
                 isGeminiConfigured,
-                refreshMoodleData
+                refreshMoodleData,
+                courseFilter,
+                setCourseFilter
             }}
         >
             {children}

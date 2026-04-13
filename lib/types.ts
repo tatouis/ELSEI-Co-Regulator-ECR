@@ -53,6 +53,8 @@ export interface SimulatedLearner {
   lastIntervention: number | null;
   interventionCount: number;
   sessionStart: number;
+  courseId?: string;
+  courseName?: string;
 }
 
 export interface ClassSummary {

@@ -1,85 +1,130 @@
 import { NextResponse } from 'next/server';
 
+// Helper for making REST calls to Moodle
+async function fetchMoodle(cleanUrl: string, token: string, wsfunction: string, extraParams: string = '') {
+    const endpoint = `${cleanUrl}/webservice/rest/server.php?wstoken=${token}&wsfunction=${wsfunction}&moodlewsrestformat=json${extraParams}`;
+    const response = await fetch(endpoint);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    if (data && data.exception) {
+        throw new Error(data.message);
+    }
+    return data;
+}
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const moodleUrl = searchParams.get('url');
     const moodleToken = searchParams.get('token');
 
-    // We default to course ID 1 (often the site home or a default course id) for demo.
-    // In a real multi-course setting you would fetch core_course_get_courses first.
-    const courseId = searchParams.get('courseid') || '1';
-
     if (!moodleUrl || !moodleToken) {
-        return NextResponse.json({ error: 'Missing Moodle URL or Token' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Missing credentials' }, { status: 400 });
     }
 
     try {
         const cleanUrl = moodleUrl.replace(/\/$/, "");
 
-        // 1. Fetch site users safely. We use email=% as a wildcard trick to get all users.
-        const usersEndpoint = `${cleanUrl}/webservice/rest/server.php?wstoken=${moodleToken}&wsfunction=core_user_get_users&moodlewsrestformat=json&criteria[0][key]=email&criteria[0][value]=%25`;
-
-        const response = await fetch(usersEndpoint);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        // 1. Fetch courses
+        const coursesData = await fetchMoodle(cleanUrl, moodleToken, 'core_course_get_courses');
+        
+        let targetCourses = Array.isArray(coursesData) ? coursesData : [];
+        if (targetCourses.length === 0) {
+            return NextResponse.json({ fallback: true, error: 'No active courses found' }, { status: 200 });
         }
 
-        let data = await response.json();
+        // Filter out site home (id 1) to avoid clutter, though keep it if it's the only one
+        const activeCourses = targetCourses.filter(c => c.id !== 1);
+        const coursesToSync = activeCourses.length > 0 ? activeCourses : targetCourses;
 
-        if (data && data.exception) {
-            return NextResponse.json({ fallback: true, error: data.message, code: data.errorcode }, { status: 200 });
+        const allMappedUsers = [];
+        const encounteredUserIds = new Set();
+
+        // 2. Iterate courses to pull enrolled users and grades
+        // In a production app, we'd paginate or batch async calls. We'll do it sequentially for safety here.
+        for (const course of coursesToSync) {
+            try {
+                const enrolledUsers = await fetchMoodle(cleanUrl, moodleToken, 'core_enrol_get_enrolled_users', `&courseid=${course.id}`);
+                
+                if (!Array.isArray(enrolledUsers)) continue;
+
+                for (const user of enrolledUsers) {
+                    if (user.deleted || user.username === 'guest') continue;
+
+                    // Compute basic simulated traits as a baseline
+                    const profiles = ['focused', 'overloaded', 'distracted', 'disengaged'];
+                    const assignProfile = profiles[user.id % 4];
+
+                    let errorRate = 0;
+                    let confidence = 0.8;
+                    
+                    // Attempt to fetch grades context if possible (Optional, fail-safe)
+                    try {
+                        const grades = await fetchMoodle(cleanUrl, moodleToken, 'gradereport_user_get_grade_items', `&courseid=${course.id}&userid=${user.id}`);
+                        if (grades && grades.usergrades && grades.usergrades[0]) {
+                            const gradeItems = grades.usergrades[0].gradeitems || [];
+                            // Quick calculation to infer confidence/errorRate from grades
+                            const validGrades = gradeItems.filter((g:any) => g.graderaw !== null && g.graderaw !== undefined && g.grademax > 0);
+                            if (validGrades.length > 0) {
+                                let totalPerc = 0;
+                                validGrades.forEach((g:any) => {
+                                    totalPerc += (g.graderaw / g.grademax);
+                                });
+                                const avgGrade = totalPerc / validGrades.length;
+                                confidence = Math.max(0.2, avgGrade);
+                                errorRate = Math.max(0, 1 - avgGrade);
+                            }
+                        }
+                    } catch (gErr) {
+                        // Grade parsing fails safely, we just use defaults
+                    }
+
+                    allMappedUsers.push({
+                        id: `${user.id}-${course.id}`, // Compose unique ID per enrollment if we want them separately, or just global
+                        realUserId: String(user.id),
+                        name: user.fullname || `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.username,
+                        profile: assignProfile,
+                        avatar: user.firstname ? user.firstname.charAt(0).toUpperCase() : (user.username?.charAt(0).toUpperCase() || 'M'),
+                        state: { 
+                            cognitiveLoad: errorRate > 0.6 ? 'high' : 'low', 
+                            attention: 'high', 
+                            motivation: confidence > 0.6 ? 'high' : 'medium', 
+                            confidence: confidence, 
+                            timestamp: Date.now() 
+                        },
+                        features: {
+                            timeSinceLastAction: 0,
+                            inactivityStreak: 0,
+                            navigationSpeed: 0,
+                            retryCount: Math.floor(errorRate * 5),
+                            errorRate: errorRate,
+                            sessionDuration: 0,
+                        },
+                        currentActivity: `Active in: ${course.shortname}`,
+                        isInQuiz: false,
+                        optOut: false,
+                        lastIntervention: null,
+                        interventionCount: 0,
+                        sessionStart: Date.now(),
+                        courseId: String(course.id),
+                        courseName: course.fullname || course.shortname
+                    });
+                     
+                }
+
+            } catch (err) {
+                // If enrolled users fails for a course, gracefully continue to the next
+                console.warn(`Could not sync course ${course.id}`, err);
+            }
         }
 
-        // core_user_get_users returns { users: [ ... ] } usually, or an array depending on the Moodle version.
-        let usersArray = [];
-        if (Array.isArray(data)) {
-            usersArray = data;
-        } else if (data.users && Array.isArray(data.users)) {
-            usersArray = data.users;
-        } else {
-            return NextResponse.json({ fallback: true, error: 'Unexpected Moodle API response format' }, { status: 200 });
+        if (allMappedUsers.length === 0) {
+            return NextResponse.json({ fallback: true, error: 'No enrolled students found in active courses.' }, { status: 200 });
         }
 
-        // Filter out guest account or admin if desired, but we can just use them all
-        const validUsers = usersArray.filter((u: any) => !u.deleted && u.username !== 'guest');
-
-        if (validUsers.length === 0) {
-             return NextResponse.json({ fallback: true, error: 'No active students found in Moodle.' }, { status: 200 });
-        }
-
-        // 2. Map Moodle users to our SimulatedLearner structure (proxy data for the demo)
-        const mappedUsers = validUsers.map((user: any, index: number) => {
-            const profiles = ['focused', 'overloaded', 'distracted', 'disengaged'];
-            const assignProfile = profiles[index % 4];
-
-            return {
-                id: String(user.id),
-                name: user.fullname || `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.username,
-                profile: assignProfile,
-                avatar: user.firstname ? user.firstname.charAt(0).toUpperCase() : (user.username?.charAt(0).toUpperCase() || 'M'),
-                state: { cognitiveLoad: 'low', attention: 'high', motivation: 'high', confidence: 0.8, timestamp: Date.now() },
-                features: {
-                    timeSinceLastAction: 0,
-                    inactivityStreak: 0,
-                    navigationSpeed: 0,
-                    retryCount: 0,
-                    errorRate: 0,
-                    sessionDuration: 0,
-                },
-                currentActivity: 'Moodle Active Course',
-                isInQuiz: false,
-                optOut: false,
-                lastIntervention: null,
-                interventionCount: 0,
-                sessionStart: Date.now(),
-            };
-        });
-
-        return NextResponse.json({ success: true, users: mappedUsers });
+        return NextResponse.json({ success: true, users: allMappedUsers });
 
     } catch (error: any) {
         console.error("Moodle Sync Error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ fallback: true, error: error.message }, { status: 200 });
     }
 }
