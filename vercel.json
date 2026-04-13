@@ -6,8 +6,7 @@
     },
     "backend": {
       "routePrefix": "/api",
-      "framework": "nestjs",
-      "rootDirectory": "backend"
+      "framework": "nestjs"
     }
   }
 }
