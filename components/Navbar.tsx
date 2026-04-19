@@ -86,6 +86,16 @@ export default function Navbar() {
                                             <Terminal className="w-3.5 h-3.5 relative z-10" />
                                             <span className="relative z-10 hidden sm:inline text-xs">Prompts</span>
                                         </Link>
+                                        <Link
+                                            href="/admin/settings"
+                                            className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${path === '/admin/settings'
+                                                ? 'text-emerald-700'
+                                                : 'text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
+                                                }`}
+                                        >
+                                            <Settings className="w-3.5 h-3.5 relative z-10" />
+                                            <span className="relative z-10 hidden sm:inline text-xs underline font-black">Configuración</span>
+                                        </Link>
                                     </div>
                                 )}
                                 
