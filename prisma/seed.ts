@@ -69,6 +69,7 @@ async function main() {
     // Dedicated Test Accounts
     { displayName: 'Tutor Prueba ECR', username: 'tutor_ecr', pass: 'ECRtest2026!', role: Role.INSTRUCTOR },
     { displayName: 'Student Prueba ECR', username: 'student_ecr', pass: 'ECRtest2026!', role: Role.STUDENT },
+    { displayName: 'System Administrator', username: 'admin01', pass: 'admin-ECR-2026!', role: Role.ADMIN },
   ];
 
   const m112 = await prisma.module.findUnique({ where: { code: 'M112' } });
@@ -102,6 +103,16 @@ async function main() {
       });
     }
   }
+
+  // 4. Initial System Logs
+  console.log('Seeding initial system logs...');
+  await prisma.systemLog.createMany({
+    data: [
+      { category: 'system', level: 'info', message: 'Database seeded with administrator and trial users.' },
+      { category: 'moodle', level: 'success', message: 'Moodle connection verified for ecr-portal.com' },
+      { category: 'gemini', level: 'warn', message: 'Gemini API reached 80% quota during initial sync' }
+    ]
+  });
 
   console.log('Database seeded successfully!');
 }

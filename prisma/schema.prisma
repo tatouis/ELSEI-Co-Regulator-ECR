@@ -3,12 +3,132 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  moodleUserId  String?
+  displayName   String
+  username      String         @unique
+  passwordHash  String
+  role          Role           @default(STUDENT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  geminiKey     String?
+  moodleToken   String?
+  moodleUrl     String?
+  consents      Consent[]      @relation("UserConsents")
+  enrollments   Enrollment[]
+  events        Event[]        @relation("ActorEvents")
+  interventions Intervention[] @relation("UserInterventions")
+  learnerStates LearnerState[] @relation("UserStates")
+}
+
+model Module {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  title       String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  enrollments Enrollment[]
+  events      Event[]      @relation("ModuleEvents")
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  userId    String
+  moduleId  String
+  createdAt DateTime @default(now())
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+}
+
+model Event {
+  id           String       @id @default(uuid())
+  timestamp    DateTime     @default(now())
+  actorUserId  String
+  source       Source       @default(SIMULATION)
+  moduleCode   String
+  activityType ActivityType
+  eventType    EventType
+  durationSec  Int?
+  attemptNo    Int?
+  success      Boolean?
+  metadata     String?
+  user         User         @relation("ActorEvents", fields: [actorUserId], references: [id], onDelete: Cascade)
+  module       Module       @relation("ModuleEvents", fields: [moduleCode], references: [code], onDelete: Cascade)
+
+  @@index([actorUserId, timestamp])
+  @@index([moduleCode, timestamp])
+}
+
+model LearnerState {
+  id               String     @id @default(uuid())
+  timestamp        DateTime   @default(now())
+  userId           String
+  cognitiveLoad    StateLevel
+  attention        StateLevel
+  motivation       StateLevel
+  confidence       Float
+  timeSinceLastSec Int?
+  inactivityStreak Int?
+  navSpeedPgMin    Float?
+  retries          Int?
+  errorRatePct     Float?
+  user             User       @relation("UserStates", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+}
+
+model Intervention {
+  id                String            @id @default(uuid())
+  timestamp         DateTime          @default(now())
+  userId            String
+  action            String
+  interventionType  InterventionType
+  message           String?
+  whyThis           String?
+  suggestedNextStep SuggestedNextStep
+  quizActive        Boolean           @default(false)
+  studentOptedOut   Boolean           @default(false)
+  cooldownRemaining Int?              @default(0)
+  reaction          String?
+  user              User              @relation("UserInterventions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+}
+
+model Consent {
+  id          String    @id @default(uuid())
+  userId      String
+  version     String
+  agreedAt    DateTime  @default(now())
+  withdrawnAt DateTime?
+  user        User      @relation("UserConsents", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+  timestamp DateTime @default(now())
+  level     String   @default("info")
+  category  String
+  message   String
+  metadata  String?
+  userId    String?
+
+  @@index([timestamp])
+  @@index([category])
 }
 
 enum Role {
   STUDENT
   INSTRUCTOR
+  ADMIN
 }
 
 enum Source {
@@ -61,112 +181,10 @@ enum SuggestedNextStep {
   none
 }
 
-model User {
-  id           String   @id @default(uuid())
-  moodleUserId String?
-  displayName  String
-  username     String   @unique
-  passwordHash String
-  role         Role     @default(STUDENT)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  enrollments   Enrollment[]
-  events        Event[]        @relation("ActorEvents")
-  learnerStates LearnerState[] @relation("UserStates")
-  interventions Intervention[] @relation("UserInterventions")
-  consents      Consent[]      @relation("UserConsents")
-}
-
-model Module {
+model SystemConfig {
   id        String   @id @default(uuid())
-  code      String   @unique
-  title     String
-  createdAt DateTime @default(now())
+  key       String   @unique
+  value     String   @db.Text
   updatedAt DateTime @updatedAt
-
-  enrollments Enrollment[]
-  events      Event[]      @relation("ModuleEvents")
 }
 
-model Enrollment {
-  id        String   @id @default(uuid())
-  userId    String
-  moduleId  String
-  createdAt DateTime @default(now())
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, moduleId])
-}
-
-model Event {
-  id           String       @id @default(uuid())
-  timestamp    DateTime     @default(now())
-  actorUserId  String
-  source       Source       @default(SIMULATION)
-  moduleCode   String
-  activityType ActivityType
-  eventType    EventType
-  durationSec  Int?
-  attemptNo    Int?
-  success      Boolean?
-  metadata     String? // Sqlite standard JSON stringification
-
-  user   User   @relation("ActorEvents", fields: [actorUserId], references: [id], onDelete: Cascade)
-  module Module @relation("ModuleEvents", fields: [moduleCode], references: [code], onDelete: Cascade)
-
-  @@index([actorUserId, timestamp])
-  @@index([moduleCode, timestamp])
-}
-
-model LearnerState {
-  id               String     @id @default(uuid())
-  timestamp        DateTime   @default(now())
-  userId           String
-  cognitiveLoad    StateLevel
-  attention        StateLevel
-  motivation       StateLevel
-  confidence       Float
-  timeSinceLastSec Int?
-  inactivityStreak Int?
-  navSpeedPgMin    Float?
-  retries          Int?
-  errorRatePct     Float?
-
-  user User @relation("UserStates", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, timestamp])
-}
-
-model Intervention {
-  id                String            @id @default(uuid())
-  timestamp         DateTime          @default(now())
-  userId            String
-  action            String
-  interventionType  InterventionType
-  message           String?
-  whyThis           String?
-  suggestedNextStep SuggestedNextStep
-  quizActive        Boolean           @default(false)
-  studentOptedOut   Boolean           @default(false)
-  cooldownRemaining Int?              @default(0)
-  reaction          String?
-
-  user User @relation("UserInterventions", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, timestamp])
-}
-
-model Consent {
-  id          String    @id @default(uuid())
-  userId      String
-  version     String
-  agreedAt    DateTime  @default(now())
-  withdrawnAt DateTime?
-
-  user User @relation("UserConsents", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}

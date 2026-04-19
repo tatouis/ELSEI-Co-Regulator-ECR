@@ -21,7 +21,10 @@ export async function POST(request: Request) {
                     id: user.id,
                     username: user.username,
                     displayName: user.displayName,
-                    role: user.role.toLowerCase()
+                    role: user.role.toLowerCase(),
+                    moodleToken: user.moodleToken,
+                    moodleUrl: user.moodleUrl,
+                    geminiKey: user.geminiKey
                 }
             });
         }

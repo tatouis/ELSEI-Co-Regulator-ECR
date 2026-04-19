@@ -18,14 +18,13 @@ export default function InstructorSettings() {
     const [loading, setLoading] = useState(false);
     const [saved, setSaved] = useState(false);
     const [envConfig, setEnvConfig] = useState<any>(null);
-    const { user, refreshMoodleData } = useSim();
+    const { user, refreshMoodleData, setUserData } = useSim();
 
     useEffect(() => {
         if (!user) return;
-        const prefix = user.username ? `_${user.username}` : '';
-        setGeminiKey(localStorage.getItem(`gemini_api_key${prefix}`) || localStorage.getItem('gemini_api_key') || '');
-        setMoodleUrl(localStorage.getItem(`moodle_url${prefix}`) || localStorage.getItem('moodle_url') || '');
-        setMoodleToken(localStorage.getItem(`moodle_token${prefix}`) || localStorage.getItem('moodle_token') || '');
+        setGeminiKey(user.geminiKey || '');
+        setMoodleUrl(user.moodleUrl || '');
+        setMoodleToken(user.moodleToken || '');
 
         // Check server-side env config
         fetch('/api/config')
@@ -53,26 +52,41 @@ export default function InstructorSettings() {
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (!user?.id) return;
         setLoading(true);
-        // Simulate save delay
-        setTimeout(async () => {
-            const prefix = user?.username ? `_${user.username}` : '';
-            localStorage.setItem(`gemini_api_key${prefix}`, geminiKey);
-            localStorage.setItem(`moodle_url${prefix}`, moodleUrl);
-            localStorage.setItem(`moodle_token${prefix}`, moodleToken);
-            
-            // Retro-compatibility fallback
-            localStorage.setItem('moodle_url', moodleUrl);
-            localStorage.setItem('moodle_token', moodleToken);
 
-            // Re-sync Moodle real data into the simulation store instantly
-            await refreshMoodleData();
+        try {
+            const res = await fetch('/api/user/settings', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user.id,
+                    moodleUrl,
+                    moodleToken,
+                    geminiKey
+                })
+            });
 
+            const data = await res.json();
+            if (data.success && data.user) {
+                // Update global store (updates state and localStorage)
+                setUserData(data.user);
+                
+                // Re-sync Moodle real data instantly
+                await refreshMoodleData();
+                
+                setSaved(true);
+                setTimeout(() => setSaved(false), 3000);
+            } else {
+                alert(data.message || 'Failed to save settings');
+            }
+        } catch (error) {
+            console.error('Save error:', error);
+            alert('Network error while saving settings');
+        } finally {
             setLoading(false);
-            setSaved(true);
-            setTimeout(() => setSaved(false), 3000);
-        }, 800);
+        }
     };
 
     return (

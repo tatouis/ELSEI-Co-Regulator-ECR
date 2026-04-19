@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
+import { prisma } from '@/lib/prisma';
 
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
@@ -55,52 +56,78 @@ export async function POST(req: Request) {
             });
         }
 
+        // 1. Fetch Prompts from DB (falling back to constants if missing)
+        const configs = await prisma.systemConfig.findMany({
+            where: { key: { in: ['intervene_system_instruction', 'intervene_developer_prompt'] } }
+        });
+        
+        let systemInstruction = configs.find(c => c.key === 'intervene_system_instruction')?.value || 
+            `You are ECR, an AI pedagogical co-regulator for higher education...`; // Original text as fallback
+
+        let rawDevPrompt = configs.find(c => c.key === 'intervene_developer_prompt')?.value || 
+            `DEVELOPER PROMPT...`; // Original text as fallback
+
+        // 2. Prepare Context for Prompt
+        const p = policyDecision;
+        const c = context;
+        const l = c.last60s;
+        const s = c.currentState;
+
+        // Simple placeholder replacement
+        const developerPrompt = rawDevPrompt
+            .replace('{{interventionType}}', String(p.interventionType))
+            .replace('{{quizActive}}', String(p.quizActive))
+            .replace('{{studentOptedOut}}', String(p.studentOptedOut))
+            .replace('{{cooldownRemainingSec}}', String(p.cooldownRemainingSec))
+            .replace('{{moduleCode}}', String(c.moduleCode || 'M112'))
+            .replace('{{moduleTitle}}', String(c.moduleTitle || ''))
+            .replace('{{activityType}}', String(c.activityType || 'reading'))
+            .replace('{{timeSinceLastActionSec}}', String(l.timeSinceLastActionSec))
+            .replace('{{inactivityStreakSec}}', String(l.inactivityStreakSec))
+            .replace('{{navSpeedPgPerMin}}', String(l.navSpeedPgPerMin))
+            .replace('{{retries}}', String(l.retries))
+            .replace('{{errorRatePct}}', String(l.errorRatePct))
+            .replace('{{CL}}', String(s.CL))
+            .replace('{{ATT}}', String(s.ATT))
+            .replace('{{MOT}}', String(s.MOT))
+            .replace('{{confidence}}', String(s.confidence));
+
         const model = dynamicGenAI.getGenerativeModel({
             model: 'gemini-2.0-flash',
-            systemInstruction: `You are ECR, an AI pedagogical co-regulator for higher education.
-You MUST NOT generate learning content, explanations, or answers to course material.
-Your only job is to phrase short, supportive, metacognitive micro-interventions.
+            systemInstruction: systemInstruction,
+        });
 
-Rules:
-- You only phrase the message for an intervention type already decided by the policy engine.
-- Keep it non-intrusive: max 2 short sentences.
-- Always respectful, autonomy-supportive, never judgmental.
-- Always include a brief "why" explanation referencing only behavioral signals (not personal traits).
-- Never mention sensitive data or speculation.
-- If context indicates a quiz is active, respond with a NO_OP payload.`,
+        const result = await model.generateContent({
+            contents: [{ role: 'user', parts: [{ text: developerPrompt }] }],
             generationConfig: {
                 responseMimeType: "application/json",
                 responseSchema: interventionSchema,
-                temperature: 0.2, // Low temperature for deterministic/safe output
+                temperature: 0.2,
             }
         });
-
-        const developerPrompt = `DEVELOPER PROMPT
-Policy decision:
-- interventionType: ${policyDecision.interventionType}
-- quizActive: ${policyDecision.quizActive}
-- studentOptedOut: ${policyDecision.studentOptedOut}
-- cooldownRemainingSec: ${policyDecision.cooldownRemainingSec}
-
-Context:
-- moduleCode: ${context.moduleCode || 'M112'}
-- moduleTitle: ${context.moduleTitle || 'Unknown'}
-- activityType: ${context.activityType || 'reading'}
-- last60s: timeSinceLastActionSec=${context.last60s.timeSinceLastActionSec}, inactivityStreakSec=${context.last60s.inactivityStreakSec}, navSpeedPgPerMin=${context.last60s.navSpeedPgPerMin}, retries=${context.last60s.retries}, errorRatePct=${context.last60s.errorRatePct}
-- currentState: CL=${context.currentState.CL}, ATT=${context.currentState.ATT}, MOT=${context.currentState.MOT}, confidence=${context.currentState.confidence}
-
-Task:
-If quizActive OR studentOptedOut OR cooldownRemainingSec>0:
-Return action=NO_OP with interventionType=none and empty message, whyThis="".
-Else:
-Return action=SHOW_INTERVENTION, use the interventionType exactly as provided.
-Keep message <= 240 characters.
-whyThis must reference 1-2 signals (e.g. inactivity, retries, error rate) in plain language.`;
-
-        const result = await model.generateContent(developerPrompt);
         const text = result.response.text();
+        const aiResponse = JSON.parse(text);
 
-        return NextResponse.json(JSON.parse(text));
+        // 3. Log to DB (only if showing intervention)
+        let interventionId = undefined;
+        if (aiResponse.action === 'SHOW_INTERVENTION') {
+            const saved = await prisma.intervention.create({
+                data: {
+                    userId: body.userId || null, 
+                    action: aiResponse.action,
+                    interventionType: aiResponse.interventionType,
+                    message: aiResponse.message,
+                    whyThis: aiResponse.whyThis,
+                    suggestedNextStep: aiResponse.suggestedNextStep || 'none',
+                    quizActive: !!p.quizActive,
+                    studentOptedOut: !!p.studentOptedOut,
+                    cooldownRemaining: p.cooldownRemainingSec || 0,
+                }
+            });
+            interventionId = saved.id;
+        }
+
+        return NextResponse.json({ ...aiResponse, id: interventionId });
 
     } catch (err: any) {
         console.error('Gemini Intervention API error:', err);

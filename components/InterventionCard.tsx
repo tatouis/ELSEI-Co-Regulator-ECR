@@ -31,8 +31,25 @@ export default function InterventionCard({ intervention, onDismiss }: Props) {
     const gradient = TYPE_COLORS[intervention.type] ?? 'from-violet-500 to-violet-700';
     const emoji = TYPE_EMOJI[intervention.type] ?? '✨';
 
-    const handleAction = (buttonLabel: string) => {
-        // Discard or continue without toast if appropriate, but prompt wants a toast for positive feedback
+    const handleAction = async (buttonLabel: string) => {
+        const reaction = buttonLabel.toLowerCase().includes('anyway') || buttonLabel.toLowerCase().includes('dismiss') 
+            ? 'DISMISSED' 
+            : 'ACCEPTED';
+
+        // Notify backend of the student's reaction
+        if (intervention.id) {
+            try {
+                fetch('/api/interventions/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: intervention.id, reaction })
+                });
+            } catch (err) {
+                console.error('Failed to send intervention feedback:', err);
+            }
+        }
+
+        // Display feedback toast and dismiss
         if (buttonLabel.toLowerCase().includes('continue') && !buttonLabel.toLowerCase().includes('anyway')) {
             const messages = ['Good progress — keep going.', 'Nice focus recovery.', 'You’re back on track.'];
             setToastMessage(messages[Math.floor(Math.random() * messages.length)]);

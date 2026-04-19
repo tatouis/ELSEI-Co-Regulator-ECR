@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, LogOut, LogIn, Settings } from 'lucide-react';
+import { Users, LogOut, LogIn, Settings, ShieldAlert, Terminal } from 'lucide-react';
 import ECRLogo from './ECRLogo';
 import StudentSelectorModal from './StudentSelectorModal';
 import { useSim } from '@/lib/simulationStore';
@@ -63,8 +63,34 @@ export default function Navbar() {
                                     </Link>
                                 )}
 
+                                 {/* Admin Console */}
+                                {user.role === 'admin' && (
+                                    <div className="flex items-center gap-1">
+                                        <Link
+                                            href="/admin"
+                                            className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${path === '/admin'
+                                                ? 'text-purple-700'
+                                                : 'text-slate-600 hover:text-purple-600 hover:bg-purple-50'
+                                                }`}
+                                        >
+                                            <ShieldAlert className="w-3.5 h-3.5 relative z-10" />
+                                            <span className="relative z-10 hidden sm:inline">Admin</span>
+                                        </Link>
+                                        <Link
+                                            href="/admin/prompts"
+                                            className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${path === '/admin/prompts'
+                                                ? 'text-indigo-700'
+                                                : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50'
+                                                }`}
+                                        >
+                                            <Terminal className="w-3.5 h-3.5 relative z-10" />
+                                            <span className="relative z-10 hidden sm:inline text-xs">Prompts</span>
+                                        </Link>
+                                    </div>
+                                )}
+                                
                                 {/* Settings */}
-                                {user.role === 'instructor' && (
+                                {(user.role === 'instructor' || user.role === 'admin') && (
                                     <Link
                                         href="/instructor/settings"
                                         className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${path === '/instructor/settings'

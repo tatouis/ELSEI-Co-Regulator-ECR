@@ -77,8 +77,8 @@ const INITIAL_LEARNERS: SimulatedLearner[] = LEARNER_NAMES.map((name, i) => ({
 interface SimStore {
     learners: SimulatedLearner[];
     currentLearner: SimulatedLearner;
-    activeIntervention: Intervention | null;
-    interventionHistory: Intervention[];
+    activeIntervention: (Intervention & { id?: string }) | null;
+    interventionHistory: (Intervention & { id?: string })[];
     control: SimulationControl;
     tick: number;
     consentGiven: boolean;
@@ -92,6 +92,7 @@ interface SimStore {
     logout: () => void;
     isGeminiConfigured: boolean;
     refreshMoodleData: () => Promise<void>;
+    setUserData: (u: any) => void;
     courseFilter: string | null;
     setCourseFilter: (id: string | null) => void;
 }
@@ -102,8 +103,8 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     const [learners, setLearners] = useState<SimulatedLearner[]>(INITIAL_LEARNERS);
     const [currentLearnerId, setCurrentLearnerId] = useState('1');
     const [courseFilter, setCourseFilter] = useState<string | null>(null);
-    const [activeIntervention, setActiveIntervention] = useState<Intervention | null>(null);
-    const [interventionHistory, setInterventionHistory] = useState<Intervention[]>([]);
+    const [activeIntervention, setActiveIntervention] = useState<(Intervention & { id?: string }) | null>(null);
+    const [interventionHistory, setInterventionHistory] = useState<(Intervention & { id?: string })[]>([]);
     const [consentGiven, setConsentGiven] = useState(false);
     const [tick, setTick] = useState(0);
     const [control, setControlState] = useState<SimulationControl>({
@@ -116,17 +117,14 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     const [isGeminiConfigured, setIsGeminiConfigured] = useState(false);
 
     const refreshMoodleData = async () => {
-        const storedUser = localStorage.getItem('ecr_user');
-        const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-        const prefix = parsedUser?.username ? `_${parsedUser.username}` : '';
-        
-        const url = localStorage.getItem(`moodle_url${prefix}`) || localStorage.getItem('moodle_url');
-        const token = localStorage.getItem(`moodle_token${prefix}`) || localStorage.getItem('moodle_token');
+        // Use user tokens if available in state, then fallback to localStorage prefix, then global localStorage
+        const userUrl = user?.moodleUrl || localStorage.getItem(`moodle_url_${user?.username}`) || localStorage.getItem('moodle_url');
+        const userToken = user?.moodleToken || localStorage.getItem(`moodle_token_${user?.username}`) || localStorage.getItem('moodle_token');
         
         try {
             const queryParams = new URLSearchParams();
-            if (url) queryParams.append('url', url);
-            if (token) queryParams.append('token', token);
+            if (userUrl) queryParams.append('url', userUrl);
+            if (userToken) queryParams.append('token', userToken);
             
             const res = await fetch(`/api/moodle/sync?${queryParams.toString()}`);
             const data = await res.json();
@@ -154,17 +152,18 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const storedUser = localStorage.getItem('ecr_user');
         if (storedUser) setUser(JSON.parse(storedUser));
+    }, []);
 
-        const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-        const prefix = parsedUser?.username ? `_${parsedUser.username}` : '';
+    useEffect(() => {
+        const prefix = user?.username ? `_${user.username}` : '';
 
-        // Check if Gemini is configured (locally or via env)
-        const localKey = localStorage.getItem(`gemini_api_key${prefix}`) || localStorage.getItem('gemini_api_key');
+        // Check if Gemini is configured (user state, local storage prefix, or global)
+        const localKey = user?.geminiKey || localStorage.getItem(`gemini_api_key${prefix}`) || localStorage.getItem('gemini_api_key');
         setIsGeminiConfigured(!!localKey);
 
-        // Initial Moodle Sync
+        // Moodle Sync when user changes or initially
         refreshMoodleData();
-    }, []);
+    }, [user]);
 
     const login = async (u: string, p: string) => {
         try {
@@ -199,6 +198,11 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         setUser(null);
         localStorage.removeItem('ecr_user');
+    };
+
+    const setUserData = (u: any) => {
+        setUser(u);
+        localStorage.setItem('ecr_user', JSON.stringify(u));
     };
 
     const tickRef = useRef(0);
@@ -240,6 +244,16 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
                 prev.map((learner) => {
                     const features = simulateFeatures(learner.profile, control.scenario, t);
                     const state = detectState(features);
+
+                    // Sync state to DB occasionally (every 20 ticks) for heatmap data
+                    if (user?.id && t % 20 === 0) {
+                        fetch('/api/learner/state', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: user.id, state, features })
+                        }).catch(e => console.error("Pulse sync fail:", e));
+                    }
+
                     // Randomly change activity
                     const activity =
                         t % 20 === 0
@@ -274,10 +288,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
             );
 
             
-            const storedUser = localStorage.getItem('ecr_user');
-            const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-            const prefix = parsedUser?.username ? `_${parsedUser.username}` : '';
-            const customGeminiKey = localStorage.getItem(`gemini_api_key${prefix}`) || localStorage.getItem('gemini_api_key') || '';
+            const customGeminiKey = user?.geminiKey || localStorage.getItem(`gemini_api_key${user?.username ? `_${user.username}` : ''}`) || localStorage.getItem('gemini_api_key') || '';
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (customGeminiKey) headers['X-Gemini-Key'] = customGeminiKey;
 
@@ -291,6 +302,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
                         studentOptedOut: currentLearner.optOut,
                         cooldownRemainingSec: 0,
                     },
+                    userId: user?.id || null,
                     context: {
                         moduleCode: currentLearner.currentActivity,
                         last60s: {
@@ -315,6 +327,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
                         // Update our intervention text with AI generated one if available
                         const finalIntervention = {
                             ...intervention,
+                            id: data.id, // Store the DB ID for feedback
                             insight: data.message ? `${data.message} ${data.whyThis ? `(${data.whyThis})` : ''}` : intervention.insight
                         };
                         setActiveIntervention(finalIntervention);
@@ -364,6 +377,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
                 logout,
                 isGeminiConfigured,
                 refreshMoodleData,
+                setUserData,
                 courseFilter,
                 setCourseFilter
             }}
