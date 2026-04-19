@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Database, UserCheck, BookOpen, FileCheck, AlertCircle, CheckCircle2, ChevronRight, Activity } from 'lucide-react';
+import { 
+    Database, UserCheck, BookOpen, FileCheck, 
+    AlertCircle, CheckCircle2, ChevronRight, Activity,
+    Clock, MessageSquare, Target, User
+} from 'lucide-react';
 import Navbar from '@/components/Navbar';
 
 export default function DataGovernance() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
   useEffect(() => {
     fetch('/api/admin/governance')
@@ -47,7 +52,6 @@ export default function DataGovernance() {
                 Monitorea la sincronización directa con el LMS. Accede a los resultados de los estudiantes, logs de actividades, tareas y el estado de los cursos integrados.
               </p>
             </div>
-            {/* Status indicators */}
             <div className="flex flex-col gap-2 min-w-[240px]">
                 <div className={`px-4 py-2.5 rounded-2xl border flex items-center justify-between ${statusColor}`}>
                     <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
@@ -71,109 +75,165 @@ export default function DataGovernance() {
                  <p className="text-rose-400/80 mt-2 text-sm max-w-lg mx-auto">Revisa la configuración del token de servicio web en Moodle o asegúrate de que el servidor LMS responda correctamente.</p>
              </div>
         ) : (
-            <div className="space-y-8">
-                {/* Courses Row */}
-                <section>
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                        <BookOpen className="w-5 h-5 text-indigo-400" /> Cursos Activos
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {data.data.Courses.map((c: any) => (
-                            <div key={c.id} className="glass p-5 rounded-2xl border border-white/10 relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 to-indigo-500/5 group-hover:to-indigo-500/10 transition-colors" />
-                                <span className="absolute top-4 right-4 text-[10px] bg-indigo-500/20 text-indigo-300 font-mono px-2 py-1 rounded">ID: {c.id}</span>
-                                <h3 className="text-lg font-bold text-white mb-1 pr-12 line-clamp-1">{c.fullname}</h3>
-                                <p className="text-xs text-slate-400">{c.shortname}</p>
-                                <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center text-xs">
-                                    <span className="text-slate-500 font-medium">Categoría ID {c.categoryid}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Lateral Column: Courses & Summary */}
+                <div className="lg:col-span-4 space-y-6">
+                    <section>
+                        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                            <BookOpen className="w-5 h-5 text-indigo-400" /> Cursos Sincronizados
+                        </h2>
+                        <div className="space-y-3">
+                            {data.data.Courses.map((c: any) => (
+                                <div key={c.id} className="glass p-4 rounded-2xl border border-white/10 hover:border-indigo-500/30 transition-all group">
+                                    <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{c.fullname}</h3>
+                                    <div className="flex items-center justify-between text-[10px] text-slate-500">
+                                        <span className="font-mono uppercase">{c.shortname}</span>
+                                        <span>ID {c.id}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+                            ))}
+                        </div>
+                    </section>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Alumnado y Actividad Reciente */}
-                    <section className="glass rounded-3xl border border-white/10 overflow-hidden shadow-2xl flex flex-col">
-                        <div className="p-5 border-b border-white/5 bg-white/[0.02]">
-                            <h2 className="text-lg font-bold flex items-center gap-2">
-                                <UserCheck className="w-5 h-5 text-emerald-400" /> Estudiantes Registrados
-                            </h2>
-                            <p className="text-xs text-slate-400 mt-1">Usuarios sincronizados desde el primer curso (Muestra top 10).</p>
+                    <section className="glass rounded-3xl border border-white/10 p-6">
+                        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                            <FileCheck className="w-5 h-5 text-cyan-400" /> Tareas Globales
+                        </h2>
+                        <div className="space-y-4">
+                            {data.data.Grades.slice(0, 5).map((g: any) => (
+                                <div key={g.id} className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                                        <Target className="w-4 h-4 text-slate-400" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold text-slate-200 truncate">{g.itemname || 'Actividad Unnamed'}</p>
+                                        <p className="text-[9px] text-slate-500 uppercase">{g.itemmodule}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                </div>
+
+                {/* Main Content: Student List & Detail */}
+                <div className="lg:col-span-8 flex flex-col gap-8">
+                    {/* Student List */}
+                    <section className="glass rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+                        <div className="p-5 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+                            <div>
+                                <h2 className="text-lg font-bold flex items-center gap-2">
+                                    <UserCheck className="w-5 h-5 text-emerald-400" /> Estudiantes en Curso
+                                </h2>
+                                <p className="text-xs text-slate-400 mt-1">Haz clic en un alumno para ver su log de actividad detallado.</p>
+                            </div>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-white/5 text-slate-400 text-[10px] uppercase tracking-widest">
                                     <tr>
                                         <th className="px-6 py-4 font-semibold">Alumno</th>
-                                        <th className="px-6 py-4 font-semibold">Rol Moodle</th>
-                                        <th className="px-6 py-4 font-semibold">Acceso ECR</th>
+                                        <th className="px-6 py-4 font-semibold">Tiempo ECR</th>
+                                        <th className="px-6 py-4 font-semibold text-right">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5 text-sm">
                                     {data.data.Students.map((s: any) => (
-                                        <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
+                                        <tr key={s.id} 
+                                            onClick={() => setSelectedStudent(s)}
+                                            className={`cursor-pointer transition-all ${selectedStudent?.id === s.id ? 'bg-indigo-500/10' : 'hover:bg-white/[0.02]'}`}>
                                             <td className="px-6 py-4">
-                                                <div className="font-semibold text-slate-200">{s.fullname}</div>
-                                                <div className="text-[10px] text-slate-500">Moodle ID: {s.id}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {s.roles?.length ? s.roles.map((r:any) => (
-                                                    <span key={r.roleid} className="inline-block bg-white/10 text-slate-300 text-[10px] px-2 py-0.5 rounded">{r.shortname}</span>
-                                                )) : <span className="text-slate-500 text-xs italic">TBD</span>}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Validado
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold border border-white/10 text-slate-400">
+                                                        {s.fullname.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-semibold text-slate-200">{s.fullname}</div>
+                                                        <div className="text-[10px] text-slate-500">ID Moodle: {s.id}</div>
+                                                    </div>
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    {s.interactionTimeMinutes} min
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button className="text-[10px] font-black uppercase text-indigo-400 hover:text-white transition-colors">Ver Log</button>
                                             </td>
                                         </tr>
                                     ))}
-                                    {data.data.Students.length === 0 && (
-                                        <tr><td colSpan={3} className="p-6 text-center text-slate-500 text-sm">No se pudieron recuperar estudiantes matriculados de la API de Moodle.</td></tr>
-                                    )}
                                 </tbody>
                             </table>
                         </div>
                     </section>
 
-                    {/* Actividades y Resultados */}
-                    <section className="glass rounded-3xl border border-white/10 overflow-hidden shadow-2xl flex flex-col">
-                        <div className="p-5 border-b border-white/5 bg-white/[0.02]">
-                            <h2 className="text-lg font-bold flex items-center gap-2">
-                                <FileCheck className="w-5 h-5 text-cyan-400" /> Tareas y Actividades del Curso
-                            </h2>
-                            <p className="text-xs text-slate-400 mt-1">Extraído del reporte de calificaciones general.</p>
-                        </div>
-                        <div className="flex-1 p-5 overflow-auto">
-                            {data.data.Grades.length > 0 ? (
-                                <div className="space-y-3">
-                                    {data.data.Grades.map((g: any) => (
-                                        <div key={g.id} className="p-4 rounded-xl border border-white/5 bg-black/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                            <div className="flex items-start gap-3">
-                                                <div className="mt-1 w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400">
-                                                    <Activity className="w-4 h-4" />
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-bold text-sm text-slate-200">{g.itemname || `Actividad ID ${g.id}`}</h4>
-                                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">{g.itemmodule || g.itemtype}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
-                                                <span className="text-xs text-slate-400">Peso en curso:</span>
-                                                <span className="text-sm font-bold text-white">{g.weightformatted || 'N/A'}</span>
-                                            </div>
+                    {/* Student Detail View */}
+                    {selectedStudent && (
+                        <section className="glass rounded-3xl border border-indigo-500/30 p-6 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                                        <User className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-white">{selectedStudent.fullname}</h3>
+                                        <p className="text-xs text-indigo-400 font-medium">Auditoría Detallada de Actividad</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setSelectedStudent(null)}
+                                    className="p-2 hover:bg-white/5 rounded-xl transition-colors text-slate-500 hover:text-white">
+                                    <AlertCircle className="w-5 h-5 rotate-45" />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Interaction Metrics */}
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest block">Métricas de Compromiso</h4>
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-4">
+                                        <div>
+                                            <p className="text-xs text-slate-400 mb-1">Tiempo de Uso</p>
+                                            <p className="text-2xl font-black text-white">{selectedStudent.interactionTimeMinutes} <span className="text-xs font-normal text-slate-500">minutos</span></p>
                                         </div>
-                                    ))}
+                                        <div className="pt-4 border-t border-white/5">
+                                            <p className="text-xs text-slate-400 mb-1">Intervenciones IA</p>
+                                            <p className="text-2xl font-black text-indigo-400">{selectedStudent.totalInterventions}</p>
+                                        </div>
+                                    </div>
                                 </div>
-                            ) : (
-                                <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-slate-500 text-sm border-2 border-dashed border-white/10 rounded-xl p-6 text-center">
-                                    <FileCheck className="w-8 h-8 mb-2 opacity-50" />
-                                    No hay tareas, actividades creadas o datos de calificaciones expuestos en el curso sincronizado en Moodle.
+
+                                {/* Activity Logs List */}
+                                <div className="md:col-span-2 space-y-4">
+                                    <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest block">Log de Interacciones Recientes (ECR)</h4>
+                                    <div className="space-y-2">
+                                        {selectedStudent.activityLogs?.length > 0 ? (
+                                            selectedStudent.activityLogs.map((log: any, idx: number) => (
+                                                <div key={idx} className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between group hover:bg-white/[0.04] transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                                                        <div>
+                                                            <p className="text-xs font-bold text-slate-200">Gemini: {log.type}</p>
+                                                            <p className="text-[9px] text-slate-500">{new Date(log.createdAt).toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
+                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${log.reaction === 'ACCEPTED' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                                                        {log.reaction || 'SENT'}
+                                                    </span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="p-8 text-center text-slate-500 border-2 border-dashed border-white/5 rounded-2xl flex flex-col items-center gap-2">
+                                                <MessageSquare className="w-6 h-6 opacity-30" />
+                                                <p className="text-xs italic">No se registran intervenciones automáticas para este alumno todavía.</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                    </section>
+                            </div>
+                        </section>
+                    )}
                 </div>
             </div>
         )}

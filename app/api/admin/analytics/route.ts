@@ -15,8 +15,7 @@ export async function GET() {
       { name: 'Pending', value: interventions.find(i => !i.reaction || i.reaction === 'PENDING')?._count._all || 0 },
     ];
 
-    // 2. Activity / Cognitive Load over time (Simple average per hour)
-    // For a real heatmap, we'd group by hour. In this simulation, we'll just take the last 24 records.
+    // 2. Heatmap Data (Cognitive Load / Attention Trends)
     const states = await prisma.learnerState.findMany({
       take: 50,
       orderBy: { timestamp: 'desc' },
@@ -37,9 +36,54 @@ export async function GET() {
       MOT: levelToNum(s.motivation)
     }));
 
+    // 3. NEW: Student Activity Intelligence (Time of Use & Interactions)
+    const activityStats = await prisma.learnerState.groupBy({
+      by: ['userId'],
+      _count: { _all: true },
+    });
+
+    const userDetails = await prisma.user.findMany({
+      where: { id: { in: activityStats.map(a => a.userId) } },
+      select: { id: true, displayName: true, username: true }
+    });
+
+    const leaderboard = activityStats.map(stat => {
+      const user = userDetails.find(u => u.id === stat.userId);
+      return {
+        id: stat.userId,
+        name: user?.displayName || user?.username || 'Unknown',
+        pulses: stat._count._all,
+        timeMinutes: Math.round((stat._count._all * 10) / 60),
+        interactions: 0 
+      };
+    }).sort((a, b) => b.pulses - a.pulses).slice(0, 5);
+
+    // Add intervention counts to leaderboard
+    for (const entry of leaderboard) {
+      entry.interactions = await prisma.intervention.count({ where: { userId: entry.id } });
+    }
+
+    // 4. NEW: Live Audit Trail (Recent high-impact events)
+    const recentInterventions = await prisma.intervention.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { displayName: true } } }
+    });
+
+    const liveEvents = recentInterventions.map(i => ({
+      id: i.id,
+      timestamp: i.createdAt,
+      type: 'intervention',
+      user: i.user?.displayName || 'Estudiante',
+      description: `Gemini intervino: ${i.type}`,
+      status: i.reaction || 'SENT'
+    }));
+
     return NextResponse.json({
       successData,
-      heatmapData
+      heatmapData,
+      leaderboard,
+      liveEvents
     });
 
   } catch (error: any) {

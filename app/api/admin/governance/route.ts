@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Usar credenciales del tutor de prueba como default para que el admin pueda ver datos
     const moodleUrl = process.env.MOODLE_URL || 'https://lms25.e-lsei.com';
     const moodleToken = process.env.MOODLE_TOKEN || '435af4165f459ef07232a8608ddd9647';
     const cleanUrl = moodleUrl.replace(/\/$/, "");
@@ -15,30 +15,58 @@ export async function GET() {
     let sampleData: any = { Courses: [], Students: [], Grades: [] };
 
     try {
-      // 1. Conseguir cursos
       const courses = await fetchMoodle('core_course_get_courses');
-      // Filtramos el curso ID 1 (habitualmente es el sitio principal) para dejar los cursos reales
       const realCourses = Array.isArray(courses) ? courses.filter((c: any) => c.id !== 1).slice(0, 3) : [];
       sampleData.Courses = realCourses;
 
       if (realCourses.length > 0) {
-        // 2. Conseguir estudiantes del primer curso real
         const courseId = realCourses[0].id;
         const users = await fetchMoodle('core_enrol_get_enrolled_users', `&courseid=${courseId}`);
-        const students = Array.isArray(users) ? users.filter((u: any) => u.roles?.some((r: any) => r.shortname === 'student') || u.roles?.length === 0) : [];
-        sampleData.Students = students.slice(0, 10);
+        const moodleStudents = Array.isArray(users) ? users.filter((u: any) => u.roles?.some((r: any) => r.shortname === 'student') || u.roles?.length === 0) : [];
+        
+        // Enhance Moodle data with ECR intelligence from our database
+        const students = [];
+        for (const mStudent of moodleStudents.slice(0, 10)) {
+          // Look up user in our DB by name or username match if possible, 
+          // but for demo we'll aggregate pulses for the currently logged in student 
+          // or just provide real counts if they exist.
+          const ecrUser = await prisma.user.findFirst({
+            where: { OR: [{ username: mStudent.username }, { displayName: mStudent.fullname }] },
+            select: { id: true }
+          });
 
-        // 3. Conseguir el reporte de notas para mostrar de qué constan las actividades
-        // core_grades_get_grades o gradereport_user_get_grade_items (requiere userid, si hay estudiante se lo pasamos)
-        if (students.length > 0) {
-            const userId = students[0].id;
+          let pulseCount = 0;
+          let interventionCount = 0;
+          let recentLogs = [];
+
+          if (ecrUser) {
+            pulseCount = await prisma.learnerState.count({ where: { userId: ecrUser.id } });
+            interventionCount = await prisma.intervention.count({ where: { userId: ecrUser.id } });
+            recentLogs = await prisma.intervention.findMany({
+                where: { userId: ecrUser.id },
+                take: 5,
+                orderBy: { createdAt: 'desc' },
+                select: { createdAt: true, type: true, reaction: true }
+            });
+          }
+
+          students.push({
+            ...mStudent,
+            interactionTimeMinutes: Math.round((pulseCount * 10) / 60),
+            totalInterventions: interventionCount,
+            activityLogs: recentLogs
+          });
+        }
+        sampleData.Students = students;
+
+        if (moodleStudents.length > 0) {
+            const userId = moodleStudents[0].id;
             const grades = await fetchMoodle('gradereport_user_get_grade_items', `&courseid=${courseId}&userid=${userId}`);
             if (grades && grades.usergrades && grades.usergrades.length > 0) {
-              sampleData.Grades = grades.usergrades[0].gradeitems.filter((item: any) => item.itemtype !== 'course');
+                sampleData.Grades = grades.usergrades[0].gradeitems.filter((item: any) => item.itemtype !== 'course');
             }
         }
       }
-
     } catch (e) {
       console.error('Moodle API fetch error:', e);
     }

@@ -85,12 +85,12 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h3 className="text-lg font-bold flex items-center gap-2">
-                                    Mapa de Calor de Actividad <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded text-slate-400 font-mono tracking-tighter uppercase">Real-time</span>
+                                    Tendencias de Estado <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded text-slate-400 font-mono tracking-tighter uppercase">Real-time</span>
                                 </h3>
-                                <p className="text-xs text-slate-400">Tendencias de Carga Cognitiva y Atención en las últimas sesiones.</p>
+                                <p className="text-xs text-slate-400">Tendencias de Carga Cognitiva y Atención detectadas.</p>
                             </div>
                             <div className="flex gap-4">
-                                <LegendItem color="#6366f1" label="Carga Cognitiva" />
+                                <LegendItem color="#6366f1" label="Carga" />
                                 <LegendItem color="#10b981" label="Atención" />
                             </div>
                         </div>
@@ -126,7 +126,7 @@ export default function AdminDashboard() {
                     <div className="glass border border-white/5 rounded-3xl p-6 shadow-2xl flex flex-col">
                         <div className="mb-4">
                             <h3 className="text-lg font-bold">Efectividad de IA</h3>
-                            <p className="text-xs text-slate-400">IntervencionesAceptadas vs. Ignoradas.</p>
+                            <p className="text-xs text-slate-400">Aceptadas vs. Ignoradas.</p>
                         </div>
                         
                         <div className="flex-1 min-h-[220px]">
@@ -150,6 +150,60 @@ export default function AdminDashboard() {
                                     <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '20px' }} />
                                 </PieChart>
                             </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Intelligence Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    {/* Activity Feed */}
+                    <div className="glass border border-white/5 rounded-3xl p-6 shadow-2xl">
+                        <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                            <Activity className="w-5 h-5 text-rose-400" /> Auditoría de Actividad en Vivo
+                        </h3>
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                            {analytics?.liveEvents.map((event: any) => (
+                                <div key={event.id} className="flex gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 group hover:bg-white/[0.04] transition-colors">
+                                    <div className="mt-1 w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="text-sm font-bold text-slate-200">{event.user}</span>
+                                            <span className="text-[10px] text-slate-500">{new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                        <p className="text-xs text-slate-400 mb-2">{event.description}</p>
+                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                                            event.status === 'ACCEPTED' ? 'bg-emerald-500/10 text-emerald-400' : 
+                                            event.status === 'DISMISSED' ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-500/10 text-slate-400'
+                                        }`}>
+                                            {event.status}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Engagement Leaderboard */}
+                    <div className="glass border border-white/5 rounded-3xl p-6 shadow-2xl">
+                        <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-emerald-400" /> Ranking de Compromiso
+                        </h3>
+                        <div className="space-y-3">
+                            {analytics?.leaderboard.map((student: any, idx: number) => (
+                                <div key={student.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.01] hover:bg-white/[0.03] transition-all">
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center font-bold text-slate-500">
+                                        #{idx + 1}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="text-sm font-bold">{student.name}</h4>
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest">{student.interactions} Intervenciones IA</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm font-black text-emerald-400">{student.timeMinutes}m</div>
+                                        <div className="text-[9px] text-slate-500 uppercase">Tiempo Total</div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
