@@ -12,16 +12,20 @@ import Navbar from '@/components/Navbar';
 export default function DataGovernance() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [showDictionary, setShowDictionary] = useState(false);
 
   useEffect(() => {
-    fetch('/api/admin/governance')
+    setLoading(true);
+    const url = selectedCourseId ? `/api/admin/governance?courseId=${selectedCourseId}` : '/api/admin/governance';
+    fetch(url)
       .then(res => res.json())
       .then(result => {
         setData(result);
         setLoading(false);
       });
-  }, []);
+  }, [selectedCourseId]);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f] text-white font-sans">
@@ -84,13 +88,20 @@ export default function DataGovernance() {
                         </h2>
                         <div className="space-y-3">
                             {data.data.Courses.map((c: any) => (
-                                <div key={c.id} className="glass p-4 rounded-2xl border border-white/10 hover:border-indigo-500/30 transition-all group">
+                                <button 
+                                    key={c.id} 
+                                    onClick={() => setSelectedCourseId(c.id.toString())}
+                                    className={`w-full text-left p-4 rounded-2xl border transition-all group ${
+                                        (selectedCourseId === c.id.toString() || (!selectedCourseId && data.data.Courses[0]?.id === c.id))
+                                        ? 'bg-indigo-500/20 border-indigo-500 shadow-lg shadow-indigo-500/10' 
+                                        : 'glass border-white/10 hover:border-indigo-500/30'
+                                    }`}>
                                     <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{c.fullname}</h3>
                                     <div className="flex items-center justify-between text-[10px] text-slate-500">
                                         <span className="font-mono uppercase">{c.shortname}</span>
                                         <span>ID {c.id}</span>
                                     </div>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </section>
@@ -126,7 +137,41 @@ export default function DataGovernance() {
                                 </h2>
                                 <p className="text-xs text-slate-400 mt-1">Haz clic en un alumno para ver su log de actividad detallado.</p>
                             </div>
+                            <button 
+                                onClick={() => setShowDictionary(!showDictionary)}
+                                className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider hover:bg-white/10 transition-colors"
+                            >
+                                {showDictionary ? 'Ocultar Variables' : 'Explorar Variables'}
+                            </button>
                         </div>
+                        
+                        {showDictionary && (
+                            <div className="p-5 bg-indigo-500/5 border-b border-white/5 animate-in slide-in-from-top-2 duration-300">
+                                <h4 className="text-xs font-black uppercase text-indigo-400 mb-3 tracking-widest">Diccionario de Datos (Moodle + ECR)</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                                        <p className="text-[10px] font-bold text-white">fullname / username</p>
+                                        <p className="text-[9px] text-slate-400">Identidad del alumno sincronizada directamente desde el núcleo de Moodle (LMS).</p>
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                                        <p className="text-[10px] font-bold text-indigo-300">interactionTimeMinutes</p>
+                                        <p className="text-[9px] text-slate-400">**ECR Inteligencia**: Tiempo estimado de uso basado en pulsos de actividad (1 pulso = 10 seg).</p>
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                                        <p className="text-[10px] font-bold text-indigo-300">totalInterventions</p>
+                                        <p className="text-[9px] text-slate-400">**ECR Inteligencia**: Contador total de sugerencias de Gemini generadas para este usuario.</p>
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                                        <p className="text-[10px] font-bold text-white">moodle_id</p>
+                                        <p className="text-[9px] text-slate-400">Clave primaria única del usuario en la base de datos externa de Moodle.</p>
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                                        <p className="text-[10px] font-bold text-white">Grade Items</p>
+                                        <p className="text-[9px] text-slate-400">Resultados de tareas y exámenes obtenidos vía `gradereport_user_get_grade_items`.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-white/5 text-slate-400 text-[10px] uppercase tracking-widest">

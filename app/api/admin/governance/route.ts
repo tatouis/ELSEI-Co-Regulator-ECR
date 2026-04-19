@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const requestedCourseId = searchParams.get('courseId');
+
     // Priority: DB Config -> ENV -> Hardcoded Fallback
     const configs = await prisma.systemConfig.findMany({
       where: { key: { in: ['moodle_url', 'moodle_token'] } }
@@ -24,11 +27,11 @@ export async function GET() {
 
     try {
       const courses = await fetchMoodle('core_course_get_courses');
-      const realCourses = Array.isArray(courses) ? courses.filter((c: any) => c.id !== 1).slice(0, 3) : [];
+      const realCourses = Array.isArray(courses) ? courses.filter((c: any) => c.id !== 1).slice(0, 10) : [];
       sampleData.Courses = realCourses;
 
       if (realCourses.length > 0) {
-        const courseId = realCourses[0].id;
+        const courseId = requestedCourseId ? parseInt(requestedCourseId) : realCourses[0].id;
         const users = await fetchMoodle('core_enrol_get_enrolled_users', `&courseid=${courseId}`);
         const moodleStudents = Array.isArray(users) ? users.filter((u: any) => u.roles?.some((r: any) => r.shortname === 'student') || u.roles?.length === 0) : [];
         
