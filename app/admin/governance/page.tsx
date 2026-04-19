@@ -17,18 +17,27 @@ export default function DataGovernance() {
   const [loading, setLoading] = useState(true);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'students' | 'dictionary' | 'performance'>('students');
+    const [activeTab, setActiveTab] = useState<'students' | 'dictionary' | 'performance'>('students');
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    setLoading(true);
-    const url = selectedCourseId ? `/api/admin/governance?courseId=${selectedCourseId}` : '/api/admin/governance';
-    fetch(url)
-      .then(res => res.json())
-      .then(result => {
-        setData(result);
-        setLoading(false);
-      });
-  }, [selectedCourseId]);
+    const toggleCategory = (category: string) => {
+        setExpandedCategories(prev => ({
+            ...prev,
+            [category]: prev[category] !== undefined ? !prev[category] : false
+        }));
+    };
+
+    useEffect(() => {
+        setLoading(true);
+        const url = selectedCourseId ? `/api/admin/governance?courseId=${selectedCourseId}` : '/api/admin/governance';
+        fetch(url)
+            .then(res => res.json())
+            .then(result => {
+                setData(result);
+                setLoading(false);
+            });
+    }, [selectedCourseId]);
+
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center text-slate-800 font-sans bg-white">
@@ -158,52 +167,63 @@ export default function DataGovernance() {
                                 <p className="text-sm text-slate-500 mt-2">Every field found in the current course API response is automatically mapped here for governance transparency.</p>
                             </div>
 
-                            <div className="space-y-12">
-                                {Object.entries(data.data.Dictionary || {}).map(([category, fields]: [any, any]) => (
-                                    <div key={category} className="space-y-4">
-                                        <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
-                                            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-                                                <Database className="w-4 h-4" />
-                                            </div>
-                                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-700">{category}</h3>
-                                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black">{Object.keys(fields).length} keys</span>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {Object.entries(fields).map(([key, info]: [any, any]) => (
-                                                <div key={key} className="p-5 rounded-3xl border border-slate-50 bg-slate-50/50 hover:bg-white hover:border-indigo-200 hover:shadow-lg transition-all group">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="font-mono text-sm font-black text-indigo-600 select-all">{key}</span>
-                                                        <span className="text-[9px] font-black px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-400 uppercase tracking-widest border border-indigo-100">{info.type}</span>
+                            <div className="space-y-6">
+                                {Object.entries(data.data.Dictionary || {}).map(([category, fields]: [any, any]) => {
+                                    const isExpanded = expandedCategories[category] !== false; // defaults to true
+                                    return (
+                                        <div key={category} className="space-y-4 bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
+                                            <button 
+                                                onClick={() => toggleCategory(category)}
+                                                className="w-full flex items-center justify-between group cursor-pointer transition-all active:scale-[0.99]"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-inner">
+                                                        <Database className="w-5 h-5" />
                                                     </div>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">SOURCE: {info.source}</p>
-                                                    
-                                                    <div className="mt-4 pt-4 border-t border-slate-100/50">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Live Data Sample</span>
-                                                        </div>
-                                                        <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 group-hover:border-indigo-100 group-hover:bg-indigo-50/30 transition-all font-mono">
-                                                            <div className="text-[10px] text-indigo-600 break-all leading-relaxed">
-                                                                {info.example !== null && info.example !== undefined ? (
-                                                                    typeof info.example === 'object' ? 
-                                                                        JSON.stringify(info.example).substring(0, 100) + (JSON.stringify(info.example).length > 100 ? '...' : '') : 
-                                                                        String(info.example)
-                                                                ) : (
-                                                                    <span className="text-slate-300 italic">null</span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                        <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">In Sync & Transparent</span>
+                                                    <div className="text-left">
+                                                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-800">{category}</h3>
+                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{Object.keys(fields).length} keys available</span>
                                                     </div>
                                                 </div>
-                                            ))}
+                                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-indigo-50 transition-colors">
+                                                    <ChevronRight className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-indigo-600' : 'rotate-0 text-slate-400 group-hover:text-indigo-500'}`} />
+                                                </div>
+                                            </button>
+                                            
+                                            {isExpanded && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100/60 animate-in fade-in slide-in-from-top-4 duration-300">
+                                                    {Object.entries(fields).map(([key, info]: [any, any]) => (
+                                                        <div key={key} className="p-5 rounded-[24px] border border-slate-50 bg-slate-50/50 hover:bg-white hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-500/5 transition-all group/card">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="font-mono text-[13px] font-black text-indigo-700 select-all">{key}</span>
+                                                                <span className="text-[9px] font-black px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-500 uppercase tracking-widest border border-indigo-100/50">{info.type}</span>
+                                                            </div>
+                                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1 truncate">SRC: {info.source}</p>
+                                                            
+                                                            <div className="mt-4 pt-4 border-t border-slate-100/50">
+                                                                <div className="flex items-center gap-2 mb-2.5">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Live Data Sample</span>
+                                                                </div>
+                                                                <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm group-hover/card:border-indigo-200 group-hover/card:bg-indigo-50/30 transition-all font-mono">
+                                                                    <div className="text-[10px] text-slate-600 break-all leading-relaxed max-h-24 overflow-y-auto custom-scrollbar">
+                                                                        {info.example !== null && info.example !== undefined ? (
+                                                                            typeof info.example === 'object' ? 
+                                                                                JSON.stringify(info.example).substring(0, 150) + (JSON.stringify(info.example).length > 150 ? '...' : '') : 
+                                                                                String(info.example)
+                                                                        ) : (
+                                                                            <span className="text-slate-300 italic font-sans font-medium">null</span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </section>
                     )}

@@ -61,6 +61,16 @@ export async function GET(request: Request) {
       sampleData.Courses = realCourses;
       if (realCourses.length > 0) addToDictionary('core_course_get_courses', realCourses[0], 'Course Module');
 
+      // 2.5 Course Categories
+      try {
+          const categories = await fetchMoodle('core_course_get_categories');
+          if (Array.isArray(categories) && categories.length > 0) {
+              addToDictionary('core_course_get_categories', categories[0], 'Course Categories');
+          }
+      } catch (e) {
+          console.warn('Could not fetch categories', e);
+      }
+
       if (realCourses.length > 0) {
         const courseId = requestedCourseId ? parseInt(requestedCourseId) : realCourses[0].id;
         
