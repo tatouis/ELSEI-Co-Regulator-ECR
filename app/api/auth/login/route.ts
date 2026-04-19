@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as bcrypt from 'bcrypt';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
     try {
@@ -15,6 +16,7 @@ export async function POST(request: Request) {
         });
 
         if (user && await bcrypt.compare(password, user.passwordHash)) {
+            await logger.success('auth', `Login exitoso: ${username}`, { userId: user.id, role: user.role }, user.id);
             return NextResponse.json({
                 success: true,
                 user: {
@@ -29,8 +31,10 @@ export async function POST(request: Request) {
             });
         }
 
+        await logger.warn('auth', `Intento de login fallido: ${username}`, { ip: request.headers.get('x-forwarded-for') });
         return NextResponse.json({ success: false, message: 'Invalid credentials' }, { status: 401 });
-    } catch (error) {
+    } catch (error: any) {
+        await logger.error('auth', `Error en servidor durante login`, { error: error.message });
         console.error('Login error:', error);
         return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
     }

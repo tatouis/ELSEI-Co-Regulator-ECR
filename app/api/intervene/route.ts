@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
@@ -108,7 +109,14 @@ export async function POST(req: Request) {
         const text = result.response.text();
         const aiResponse = JSON.parse(text);
 
-        // 3. Log to DB (only if showing intervention)
+        // 3. Log to SystemLog (Audit Trail)
+        await logger.info('gemini', `Intervención generada: ${aiResponse.interventionType}`, {
+            prompt: developerPrompt,
+            response: aiResponse,
+            userId: body.userId
+        }, body.userId);
+
+        // 4. Log to Intervention Table (Performance tracking)
         let interventionId = undefined;
         if (aiResponse.action === 'SHOW_INTERVENTION') {
             const saved = await prisma.intervention.create({

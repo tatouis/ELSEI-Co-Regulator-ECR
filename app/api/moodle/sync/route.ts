@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // Helper for making REST calls to Moodle
 async function fetchMoodle(cleanUrl: string, token: string, wsfunction: string, extraParams: string = '') {
@@ -23,6 +24,7 @@ export async function GET(request: Request) {
 
     try {
         const cleanUrl = moodleUrl.replace(/\/$/, "");
+        await logger.info('moodle', 'Iniciando sincronización con Moodle', { url: cleanUrl });
 
         // 1. Fetch courses
         const coursesData = await fetchMoodle(cleanUrl, moodleToken, 'core_course_get_courses');
@@ -121,9 +123,11 @@ export async function GET(request: Request) {
             return NextResponse.json({ fallback: true, error: 'No enrolled students found in active courses.' }, { status: 200 });
         }
 
+        await logger.success('moodle', `Sincronización completada: ${allMappedUsers.length} estudiantes procesados`, { courses: coursesToSync.length });
         return NextResponse.json({ success: true, users: allMappedUsers });
 
     } catch (error: any) {
+        await logger.error('moodle', 'Fallo en la sincronización con Moodle', { error: error.message });
         console.error("Moodle Sync Error:", error);
         return NextResponse.json({ fallback: true, error: error.message }, { status: 200 });
     }

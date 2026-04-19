@@ -1,9 +1,33 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Save, RotateCcw, AlertTriangle, CheckCircle2, Terminal, Info } from 'lucide-react';
+import { 
+    Save, RotateCcw, AlertTriangle, CheckCircle2, 
+    Terminal, Info, Book, FileCode, MousePointer2,
+    HelpCircle, Sparkles, ChevronRight
+} from 'lucide-react';
 import Navbar from '@/components/Navbar';
+
+interface Variable {
+    name: string;
+    description: string;
+    example: string;
+}
+
+const VARIABLES: Variable[] = [
+    { name: 'interventionType', description: 'Estrategia seleccionada (ej: reflective_prompt)', example: 'reflective_prompt' },
+    { name: 'studentName', description: 'Nombre completo del alumno', example: 'Juan Pérez' },
+    { name: 'moduleCode', description: 'Código del módulo actual', example: 'M112' },
+    { name: 'moduleTitle', description: 'Título descriptivo del curso', example: 'Soporte Vital Avanzado' },
+    { name: 'activityType', description: 'Tipo de recurso (quiz, reading, video)', example: 'quiz' },
+    { name: 'CL', description: 'Carga Cognitiva (low, medium, high)', example: 'high' },
+    { name: 'ATT', description: 'Nivel de Atención (low, medium, high)', example: 'low' },
+    { name: 'MOT', description: 'Nivel de Motivación (low, medium, high)', example: 'medium' },
+    { name: 'confidence', description: 'Confianza estimada (0.0 a 1.0)', example: '0.45' },
+    { name: 'retries', description: 'Número de reintentos en la actividad', example: '3' },
+    { name: 'errorRatePct', description: 'Porcentaje de error detectado', example: '75' },
+];
 
 export default function PromptManagement() {
     const [prompts, setPrompts] = useState<Record<string, string>>({
@@ -13,12 +37,19 @@ export default function PromptManagement() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+    const [activeField, setActiveField] = useState<'system' | 'developer' | null>(null);
+    
+    const systemRef = useRef<HTMLTextAreaElement>(null);
+    const developerRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         fetch('/api/admin/prompts')
             .then(res => res.json())
             .then(data => {
-                setPrompts(data);
+                setPrompts({
+                    intervene_system_instruction: data.intervene_system_instruction || '',
+                    intervene_developer_prompt: data.intervene_developer_prompt || ''
+                });
                 setLoading(false);
             })
             .catch(err => {
@@ -37,153 +68,243 @@ export default function PromptManagement() {
                 body: JSON.stringify({ key, value: prompts[key] })
             });
             if (res.ok) {
-                setStatus({ type: 'success', msg: `${key.replace('intervene_', '').replace(/_/g, ' ')} guardado correctamente.` });
+                setStatus({ type: 'success', msg: `${key.replace('intervene_', '').replace(/_/g, ' ')} guardado.` });
             } else {
-                setStatus({ type: 'error', msg: 'Error al conectar con la API.' });
+                setStatus({ type: 'error', msg: 'Error de API.' });
             }
         } catch (err) {
-            setStatus({ type: 'error', msg: 'Error de red al guardar.' });
+            setStatus({ type: 'error', msg: 'Error de red.' });
         } finally {
             setSaving(false);
             setTimeout(() => setStatus(null), 3000);
         }
     };
 
+    const insertVariable = (varName: string) => {
+        const field = activeField === 'system' ? 'intervene_system_instruction' : 'intervene_developer_prompt';
+        const ref = activeField === 'system' ? systemRef : developerRef;
+        
+        if (!ref.current) return;
+
+        const start = ref.current.selectionStart;
+        const end = ref.current.selectionEnd;
+        const text = prompts[field];
+        const placeholder = `{{${varName}}}`;
+        
+        const newText = text.substring(0, start) + placeholder + text.substring(end);
+        
+        setPrompts({ ...prompts, [field]: newText });
+        
+        // Return focus and move cursor after insertion
+        setTimeout(() => {
+            if (ref.current) {
+                ref.current.focus();
+                ref.current.setSelectionRange(start + placeholder.length, start + placeholder.length);
+            }
+        }, 10);
+    };
+
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
-                <div className="w-8 h-8 border-4 border-violet-600 border-t-transparent rounded-full animate-spin" />
+            <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#f8fafc]">
+        <div className="min-h-screen bg-[#0a0a0f] text-white selection:bg-indigo-500/30 font-sans">
             <Navbar />
             
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="max-w-[1600px] mx-auto px-6 pt-24 pb-12">
                 {/* Header */}
-                <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                        <div className="flex items-center gap-2 text-violet-600 mb-1">
-                            <Terminal className="w-5 h-5" />
-                            <span className="text-xs font-bold uppercase tracking-widest">IA Engine</span>
+                        <div className="flex items-center gap-2 text-indigo-400 mb-2">
+                            <Sparkles className="w-5 h-5 animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">IA Engine Orchestrator</span>
                         </div>
-                        <h1 className="text-3xl font-bold text-slate-800">Gestión de Prompts</h1>
-                        <p className="text-slate-500 mt-1">Ajusta las instrucciones de comportamiento de Gemini para las intervenciones de tutoría.</p>
+                        <h1 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">
+                            Gestión de Comportamiento (Prompts)
+                        </h1>
+                        <p className="text-slate-500 mt-2 font-light max-w-2xl">
+                            Ajusta las instrucciones maestras de Gemini. Elige cómo el sistema debe razonar, qué tono usar y cómo debe interpretar las variables del alumno en tiempo real.
+                        </p>
                     </div>
 
                     <AnimatePresence>
                         {status && (
                             <motion.div 
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className={`px-4 py-2 rounded-xl flex items-center gap-2 border ${
-                                    status.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'
+                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                                className={`px-5 py-3 rounded-2xl flex items-center gap-3 border shadow-2xl backdrop-blur-xl ${
+                                    status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                                 }`}
                             >
-                                {status.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-                                <span className="text-sm font-medium">{status.msg}</span>
+                                {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                                <span className="text-sm font-bold">{status.msg}</span>
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* System Instruction */}
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="glass rounded-3xl border border-white p-6 shadow-xl shadow-slate-200/50"
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center text-violet-600">
-                                    <Info className="w-4 h-4" />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    {/* LEFT: Prompt Editors */}
+                    <div className="lg:col-span-8 space-y-8">
+                        {/* System Instruction */}
+                        <div className="glass rounded-[2rem] border border-white/5 p-8 shadow-2xl relative group">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                                        <Shield className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-white text-base">System Instruction</h3>
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Identidad Global del Agente</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="font-bold text-slate-800 text-sm">System Instruction</h3>
-                                    <p className="text-[10px] text-slate-400">Identidad y reglas básicas del modelo</p>
-                                </div>
+                                <button 
+                                    onClick={() => handleSave('intervene_system_instruction')}
+                                    disabled={saving}
+                                    className="px-6 py-3 bg-white text-black hover:bg-indigo-400 hover:text-white disabled:bg-slate-800 disabled:text-slate-500 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-white/5"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    {saving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}
+                                </button>
                             </div>
-                            <button 
-                                onClick={() => handleSave('intervene_system_instruction')}
-                                disabled={saving}
-                                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-violet-300 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-violet-200"
-                            >
-                                <Save className="w-3.5 h-3.5" />
-                                {saving ? 'Guardando...' : 'Guardar'}
-                            </button>
-                        </div>
 
-                        <div className="relative group">
                             <textarea
+                                ref={systemRef}
                                 value={prompts.intervene_system_instruction}
+                                onFocus={() => setActiveField('system')}
                                 onChange={(e) => setPrompts({ ...prompts, intervene_system_instruction: e.target.value })}
-                                className="w-full h-[400px] bg-slate-900 text-slate-300 p-4 rounded-2xl font-mono text-xs leading-relaxed focus:ring-2 focus:ring-violet-500 outline-none border-none resize-none shadow-inner"
-                                placeholder="Escribe aquí las instrucciones de sistema..."
+                                className="w-full h-[350px] bg-black/40 text-indigo-100/90 p-8 rounded-3xl font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500/50 outline-none border border-white/5 resize-none transition-all shadow-inner"
+                                placeholder="Define el rol de la IA..."
                             />
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span className="text-[10px] text-slate-500 font-mono">system_instruction</span>
+                            
+                            <div className="mt-4 flex items-center gap-2 text-slate-500 text-[10px]">
+                                <Info className="w-3 h-3" />
+                                <span>Aquí defines el **quién es** el agente. No uses variables dinámicas aquí.</span>
                             </div>
                         </div>
-                    </motion.div>
 
-                    {/* Developer Prompt */}
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="glass rounded-3xl border border-white p-6 shadow-xl shadow-slate-200/50"
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                    <Terminal className="w-4 h-4" />
+                        {/* Developer Prompt */}
+                        <div className="glass rounded-[2rem] border border-white/5 p-8 shadow-2xl relative group">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-violet-500/20 flex items-center justify-center text-violet-400 border border-violet-500/20">
+                                        <Terminal className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-white text-base">Developer / User Prompt</h3>
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Contexto Dinámico e Inyección de Datos</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="font-bold text-slate-800 text-sm">Developer Prompt</h3>
-                                    <p className="text-[10px] text-slate-400">Contexto dinámico y placeholders de datos</p>
-                                </div>
+                                <button 
+                                    onClick={() => handleSave('intervene_developer_prompt')}
+                                    disabled={saving}
+                                    className="px-6 py-3 bg-white text-black hover:bg-violet-400 hover:text-white disabled:bg-slate-800 disabled:text-slate-500 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-white/5"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    {saving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}
+                                </button>
                             </div>
-                            <button 
-                                onClick={() => handleSave('intervene_developer_prompt')}
-                                disabled={saving}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-200"
-                            >
-                                <Save className="w-3.5 h-3.5" />
-                                {saving ? 'Guardando...' : 'Guardar'}
-                            </button>
-                        </div>
 
-                        <div className="relative group">
                             <textarea
+                                ref={developerRef}
                                 value={prompts.intervene_developer_prompt}
+                                onFocus={() => setActiveField('developer')}
                                 onChange={(e) => setPrompts({ ...prompts, intervene_developer_prompt: e.target.value })}
-                                className="w-full h-[400px] bg-slate-900 text-indigo-200/80 p-4 rounded-2xl font-mono text-xs leading-relaxed focus:ring-2 focus:ring-indigo-500 outline-none border-none resize-none shadow-inner"
-                                placeholder="Escribe aquí el prompt con variables..."
+                                className="w-full h-[450px] bg-black/40 text-violet-100/90 p-8 rounded-3xl font-mono text-sm leading-relaxed focus:ring-2 focus:ring-violet-500/50 outline-none border border-white/5 resize-none transition-all shadow-inner"
+                                placeholder="Define cómo la IA usa los datos..."
                             />
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                <span className="text-[10px] text-slate-500 font-mono">user_prompt</span>
+
+                            <div className="mt-4 flex items-center gap-2 text-slate-500 text-[10px]">
+                                <FileCode className="w-3 h-3 text-violet-400" />
+                                <span>Usa las variables de la derecha con doble llave: `{"{{variable}}"}`.</span>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="mt-4 p-3 bg-indigo-50/50 rounded-xl border border-indigo-100">
-                            <p className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <RotateCcw className="w-3 h-3" /> Placeholders Disponibles
+                    {/* RIGHT: Variables & Help */}
+                    <div className="lg:col-span-4 space-y-8">
+                        {/* Variable Toolbox */}
+                        <section className="glass rounded-[2rem] border border-indigo-500/20 p-8 shadow-2xl sticky top-24">
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                                    <Book className="w-5 h-5" />
+                                </div>
+                                <h2 className="text-xl font-black italic tracking-tight">Variables Toolbox</h2>
+                            </div>
+
+                            <p className="text-xs text-slate-500 mb-6 font-light leading-relaxed">
+                                Haz clic en una variable para insertarla en la posición del cursor del editor activo.
                             </p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {['interventionType', 'quizActive', 'CL', 'ATT', 'MOT', 'moduleCode', 'activityType'].map(p => (
-                                    <span key={p} className="text-[9px] font-mono bg-white px-1.5 py-0.5 rounded border border-indigo-200 text-indigo-600">
-                                        {'{{' + p + '}}'}
-                                    </span>
+
+                            <div className="space-y-3">
+                                {VARIABLES.map((v) => (
+                                    <div 
+                                        key={v.name}
+                                        onClick={() => insertVariable(v.name)}
+                                        className="group p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-indigo-500/30 transition-all cursor-pointer flex flex-col gap-1"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-black text-indigo-400">{"{{" + v.name + "}}"}</span>
+                                            <MousePointer2 className="w-3 h-3 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                        <p className="text-[10px] text-slate-400">{v.description}</p>
+                                        <div className="mt-2 text-[9px] font-mono text-slate-600 truncate italic">
+                                            Ejemplo: {v.example}
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
-                        </div>
-                    </motion.div>
+
+                            {/* Help Section */}
+                            <div className="mt-8 pt-8 border-t border-white/5">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-indigo-300 mb-4 flex items-center gap-2">
+                                    <HelpCircle className="w-3.5 h-3.5" /> Guía de Estructura
+                                </h3>
+                                <div className="space-y-4">
+                                    <div className="flex gap-3">
+                                        <div className="mt-1 w-1 h-1 rounded-full bg-indigo-500 shrink-0" />
+                                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                                            **System**: Define la personalidad. Ej: "Eres un mentor socrático que nunca da la respuesta".
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <div className="mt-1 w-1 h-1 rounded-full bg-violet-500 shrink-0" />
+                                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                                            **Developer**: Define los datos. Ej: "El alumno tiene carga `{"{{CL}}"}`. Genera un consejo".
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
                 </div>
             </div>
+
+            <style jsx global>{`
+                .glass {
+                    background: rgba(255, 255, 255, 0.02);
+                    backdrop-filter: blur(40px);
+                    -webkit-backdrop-filter: blur(40px);
+                }
+                textarea::-webkit-scrollbar {
+                    width: 6px;
+                }
+                textarea::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 10px;
+                }
+            `}</style>
         </div>
     );
+}
+
+function Shield(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+  )
 }
