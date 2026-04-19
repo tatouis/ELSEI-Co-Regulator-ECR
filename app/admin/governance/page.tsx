@@ -166,6 +166,25 @@ export default function DataGovernance() {
                                             <span className="text-[9px] font-black px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-400 uppercase tracking-widest border border-indigo-100">{info.type}</span>
                                         </div>
                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">SOURCE: {info.source}</p>
+                                        
+                                        <div className="mt-4 pt-4 border-t border-slate-100/50">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Live Data Sample</span>
+                                            </div>
+                                            <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 group-hover:border-indigo-100 group-hover:bg-indigo-50/30 transition-all font-mono">
+                                                <div className="text-[10px] text-indigo-600 break-all leading-relaxed">
+                                                    {info.example !== null && info.example !== undefined ? (
+                                                        typeof info.example === 'object' ? 
+                                                            JSON.stringify(info.example).substring(0, 100) + (JSON.stringify(info.example).length > 100 ? '...' : '') : 
+                                                            String(info.example)
+                                                    ) : (
+                                                        <span className="text-slate-300 italic">null</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100 opacity-60 group-hover:opacity-100 transition-opacity">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                             <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">In Sync & Transparent</span>

@@ -25,39 +25,53 @@ export async function GET(request: Request) {
 
     let sampleData: any = { Courses: [], Students: [], Grades: [], Contents: [], Dictionary: {} };
 
+    const addToDictionary = (source: string, obj: any) => {
+        if (!obj || typeof obj !== 'object') return;
+        Object.keys(obj).forEach(key => {
+            // We keep the first example found or update if it's currently null
+            if (!sampleData.Dictionary[key] || (sampleData.Dictionary[key].example === null && obj[key] !== null)) {
+                const val = obj[key];
+                let example = val;
+                
+                // Truncate long strings for the example field
+                if (typeof val === 'string' && val.length > 100) {
+                    example = val.substring(0, 97) + '...';
+                }
+                
+                sampleData.Dictionary[key] = { 
+                    source, 
+                    type: Array.isArray(val) ? 'array' : (val === null ? 'null' : typeof val),
+                    example: example
+                };
+            }
+        });
+    };
+
     try {
+      // 1. Platform-level metadata
+      const siteInfo = await fetchMoodle('core_webservice_get_site_info');
+      addToDictionary('core_webservice_get_site_info', siteInfo);
+
+      // 2. Course-level metadata
       const courses = await fetchMoodle('core_course_get_courses');
       const realCourses = Array.isArray(courses) ? courses.filter((c: any) => c.id !== 1).slice(0, 10) : [];
       sampleData.Courses = realCourses;
-
-      // Extract metadata keys from courses
-      if (realCourses.length > 0) {
-        Object.keys(realCourses[0]).forEach(key => {
-            sampleData.Dictionary[key] = { source: 'core_course_get_courses', type: typeof realCourses[0][key] };
-        });
-      }
+      if (realCourses.length > 0) addToDictionary('core_course_get_courses', realCourses[0]);
 
       if (realCourses.length > 0) {
         const courseId = requestedCourseId ? parseInt(requestedCourseId) : realCourses[0].id;
         
-        // Fetch course contents (activities)
+        // 3. Activity-level metadata
         const contents = await fetchMoodle('core_course_get_contents', `&courseid=${courseId}`);
         sampleData.Contents = Array.isArray(contents) ? contents : [];
         if (sampleData.Contents.length > 0 && sampleData.Contents[0].modules?.length > 0) {
-            Object.keys(sampleData.Contents[0].modules[0]).forEach(key => {
-                sampleData.Dictionary[key] = { source: 'core_course_get_contents', type: typeof sampleData.Contents[0].modules[0][key] };
-            });
+            addToDictionary('core_course_get_contents', sampleData.Contents[0].modules[0]);
         }
 
+        // 4. Enrollment & User-level metadata
         const users = await fetchMoodle('core_enrol_get_enrolled_users', `&courseid=${courseId}`);
         const moodleStudents = Array.isArray(users) ? users.filter((u: any) => u.roles?.some((r: any) => r.shortname === 'student') || u.roles?.length === 0) : [];
-        
-        // Extract metadata keys from users
-        if (moodleStudents.length > 0) {
-            Object.keys(moodleStudents[0]).forEach(key => {
-                sampleData.Dictionary[key] = { source: 'core_enrol_get_enrolled_users', type: typeof moodleStudents[0][key] };
-            });
-        }
+        if (moodleStudents.length > 0) addToDictionary('core_enrol_get_enrolled_users', moodleStudents[0]);
 
         // Enhance Moodle data with ECR intelligence
         const students = [];
@@ -83,16 +97,13 @@ export async function GET(request: Request) {
             });
           }
 
-          // Fetch real progress from Moodle
+          // 5. Completion-level metadata
           try {
             const comp = await fetchMoodle('core_completion_get_activities_completion_status', `&courseid=${courseId}&userid=${mStudent.id}`);
             if (comp && comp.statuses) {
                 completionStatus = comp.statuses;
-                // Add keys to dictionary if not present
                 if (comp.statuses.length > 0) {
-                    Object.keys(comp.statuses[0]).forEach(key => {
-                        sampleData.Dictionary[key] = { source: 'core_completion_get_activities_completion_status', type: typeof comp.statuses[0][key] };
-                    });
+                    addToDictionary('core_completion_get_activities_completion_status', comp.statuses[0]);
                 }
             }
           } catch (e) {
@@ -109,16 +120,14 @@ export async function GET(request: Request) {
         }
         sampleData.Students = students;
 
-        // Fetch grades for the first student to get schema
+        // 6. Grade-level metadata
         if (moodleStudents.length > 0) {
             const userId = moodleStudents[0].id;
             const grades = await fetchMoodle('gradereport_user_get_grade_items', `&courseid=${courseId}&userid=${userId}`);
             if (grades && grades.usergrades && grades.usergrades.length > 0) {
                 sampleData.Grades = grades.usergrades[0].gradeitems.filter((item: any) => item.itemtype !== 'course');
                 if (sampleData.Grades.length > 0) {
-                    Object.keys(sampleData.Grades[0]).forEach(key => {
-                        sampleData.Dictionary[key] = { source: 'gradereport_user_get_grade_items', type: typeof sampleData.Grades[0][key] };
-                    });
+                    addToDictionary('gradereport_user_get_grade_items', sampleData.Grades[0]);
                 }
             }
         }
