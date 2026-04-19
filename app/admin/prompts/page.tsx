@@ -106,26 +106,26 @@ export default function PromptManagement() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center text-indigo-600">
                 <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0f] text-white selection:bg-indigo-500/30 font-sans">
+        <div className="min-h-screen text-slate-900 selection:bg-indigo-500/10 font-sans">
             <Navbar />
             
             <div className="max-w-[1600px] mx-auto px-6 pt-24 pb-12">
                 {/* Header */}
                 <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                        <div className="flex items-center gap-2 text-indigo-400 mb-2">
+                        <div className="flex items-center gap-2 text-indigo-600 mb-2">
                             <Sparkles className="w-5 h-5 animate-pulse" />
                             <span className="text-[10px] font-black uppercase tracking-[0.2em]">IA Engine Orchestrator</span>
                         </div>
-                        <h1 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">
-                            Gestión de Comportamiento (Prompts)
+                        <h1 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-indigo-600">
+                            Gestin de Comportamiento (Prompts)
                         </h1>
                         <p className="text-slate-500 mt-2 font-light max-w-2xl">
                             Ajusta las instrucciones maestras de Gemini. Elige cómo el sistema debe razonar, qué tono usar y cómo debe interpretar las variables del alumno en tiempo real.
@@ -136,12 +136,12 @@ export default function PromptManagement() {
                         {status && (
                             <motion.div 
                                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                                className={`px-5 py-3 rounded-2xl flex items-center gap-3 border shadow-2xl backdrop-blur-xl ${
-                                    status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                                className={`px-6 py-3 rounded-2xl flex items-center gap-3 border shadow-2xl backdrop-blur-xl ${
+                                    status.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'
                                 }`}
                             >
                                 {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-                                <span className="text-sm font-bold">{status.msg}</span>
+                                <span className="text-sm font-black uppercase tracking-wider">{status.msg}</span>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -152,21 +152,21 @@ export default function PromptManagement() {
                     {/* LEFT: Prompt Editors */}
                     <div className="lg:col-span-8 space-y-8">
                         {/* System Instruction */}
-                        <div className="glass rounded-[2rem] border border-white/5 p-8 shadow-2xl relative group">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
-                                        <Shield className="w-5 h-5" />
+                        <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-2xl shadow-indigo-500/5 relative group transition-all hover:shadow-indigo-500/10">
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
+                                        <Shield className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <h3 className="font-black text-white text-base">System Instruction</h3>
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Identidad Global del Agente</p>
+                                        <h3 className="font-black text-slate-800 text-lg">System Instruction</h3>
+                                        <p className="text-[10px] text-indigo-500 uppercase tracking-[0.2em] font-black">Identidad Global del Agente</p>
                                     </div>
                                 </div>
                                 <button 
                                     onClick={() => handleSave('intervene_system_instruction')}
                                     disabled={saving}
-                                    className="px-6 py-3 bg-white text-black hover:bg-indigo-400 hover:text-white disabled:bg-slate-800 disabled:text-slate-500 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-white/5"
+                                    className="px-8 py-4 bg-slate-900 text-white hover:bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-400 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-slate-200"
                                 >
                                     <Save className="w-4 h-4" />
                                     {saving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}
@@ -178,7 +178,7 @@ export default function PromptManagement() {
                                 value={prompts.intervene_system_instruction}
                                 onFocus={() => setActiveField('system')}
                                 onChange={(e) => setPrompts({ ...prompts, intervene_system_instruction: e.target.value })}
-                                className="w-full h-[350px] bg-black/40 text-indigo-100/90 p-8 rounded-3xl font-mono text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500/50 outline-none border border-white/5 resize-none transition-all shadow-inner"
+                                className="w-full h-[350px] bg-slate-50 text-indigo-900 p-8 rounded-3xl font-mono text-sm leading-relaxed focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 focus:bg-white outline-none border border-slate-100 resize-none transition-all shadow-inner placeholder:text-slate-300"
                                 placeholder="Define el rol de la IA..."
                             />
                             
@@ -189,21 +189,21 @@ export default function PromptManagement() {
                         </div>
 
                         {/* Developer Prompt */}
-                        <div className="glass rounded-[2rem] border border-white/5 p-8 shadow-2xl relative group">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-2xl bg-violet-500/20 flex items-center justify-center text-violet-400 border border-violet-500/20">
-                                        <Terminal className="w-5 h-5" />
+                        <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-2xl shadow-violet-500/5 relative group transition-all hover:shadow-violet-500/10">
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-violet-50 flex items-center justify-center text-violet-600 border border-violet-100">
+                                        <Terminal className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <h3 className="font-black text-white text-base">Developer / User Prompt</h3>
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Contexto Dinámico e Inyección de Datos</p>
+                                        <h3 className="font-black text-slate-800 text-lg">Developer / User Prompt</h3>
+                                        <p className="text-[10px] text-violet-500 uppercase tracking-[0.2em] font-black">Contexto Dinmico e Inyeccin de Datos</p>
                                     </div>
                                 </div>
                                 <button 
                                     onClick={() => handleSave('intervene_developer_prompt')}
                                     disabled={saving}
-                                    className="px-6 py-3 bg-white text-black hover:bg-violet-400 hover:text-white disabled:bg-slate-800 disabled:text-slate-500 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-white/5"
+                                    className="px-8 py-4 bg-slate-900 text-white hover:bg-violet-600 disabled:bg-slate-200 disabled:text-slate-400 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-slate-200"
                                 >
                                     <Save className="w-4 h-4" />
                                     {saving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}
@@ -215,8 +215,8 @@ export default function PromptManagement() {
                                 value={prompts.intervene_developer_prompt}
                                 onFocus={() => setActiveField('developer')}
                                 onChange={(e) => setPrompts({ ...prompts, intervene_developer_prompt: e.target.value })}
-                                className="w-full h-[450px] bg-black/40 text-violet-100/90 p-8 rounded-3xl font-mono text-sm leading-relaxed focus:ring-2 focus:ring-violet-500/50 outline-none border border-white/5 resize-none transition-all shadow-inner"
-                                placeholder="Define cómo la IA usa los datos..."
+                                className="w-full h-[450px] bg-slate-50 text-violet-900 p-8 rounded-3xl font-mono text-sm leading-relaxed focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500/30 focus:bg-white outline-none border border-slate-100 resize-none transition-all shadow-inner placeholder:text-slate-300"
+                                placeholder="Define cmo la IA usa los datos..."
                             />
 
                             <div className="mt-4 flex items-center gap-2 text-slate-500 text-[10px]">
@@ -229,65 +229,65 @@ export default function PromptManagement() {
                     {/* RIGHT: Variables & Help */}
                     <div className="lg:col-span-4 space-y-8">
                         {/* Variable Toolbox */}
-                        <section className="glass rounded-[2rem] border border-indigo-500/20 p-8 shadow-2xl sticky top-24">
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-                                    <Book className="w-5 h-5" />
+                        <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-2xl shadow-indigo-500/5 sticky top-24 transition-all hover:shadow-indigo-500/10">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
+                                    <Book className="w-6 h-6" />
                                 </div>
-                                <h2 className="text-xl font-black italic tracking-tight">Variables Toolbox</h2>
+                                <h2 className="text-xl font-black italic tracking-tight text-slate-800">Variables Toolbox</h2>
                             </div>
 
-                            <p className="text-xs text-slate-500 mb-6 font-light leading-relaxed">
-                                Haz clic en una variable para insertarla en la posición del cursor del editor activo.
+                            <p className="text-xs text-slate-500 mb-8 font-medium leading-relaxed">
+                                Haz clic en una variable para insertarla en la posicin del cursor del editor activo.
                             </p>
 
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 {VARIABLES.map((v) => (
                                     <div 
                                         key={v.name}
                                         onClick={() => insertVariable(v.name)}
-                                        className="group p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-indigo-500/30 transition-all cursor-pointer flex flex-col gap-1"
+                                        className="group p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/5 transition-all cursor-pointer flex flex-col gap-1.5"
                                     >
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm font-black text-indigo-400">{"{{" + v.name + "}}"}</span>
-                                            <MousePointer2 className="w-3 h-3 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <span className="text-sm font-black text-indigo-600">{"{{" + v.name + "}}"}</span>
+                                            <MousePointer2 className="w-4 h-4 text-indigo-400 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
                                         </div>
-                                        <p className="text-[10px] text-slate-400">{v.description}</p>
-                                        <div className="mt-2 text-[9px] font-mono text-slate-600 truncate italic">
+                                        <p className="text-[10px] text-slate-500 font-medium">{v.description}</p>
+                                        <div className="mt-2 text-[9px] font-mono text-slate-400 truncate italic">
                                             Ejemplo: {v.example}
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            {/* Help Section */}
-                            <div className="mt-8 pt-8 border-t border-white/5">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-indigo-300 mb-4 flex items-center gap-2">
-                                    <HelpCircle className="w-3.5 h-3.5" /> Guía de Estructura
-                                </h3>
-                                <div className="space-y-4">
-                                    <div className="flex gap-3">
-                                        <div className="mt-1 w-1 h-1 rounded-full bg-indigo-500 shrink-0" />
-                                        <p className="text-[10px] text-slate-400 leading-relaxed">
-                                            **System**: Define la personalidad. Ej: "Eres un mentor socrático que nunca da la respuesta".
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <div className="mt-1 w-1 h-1 rounded-full bg-violet-500 shrink-0" />
-                                        <p className="text-[10px] text-slate-400 leading-relaxed">
-                                            **Developer**: Define los datos. Ej: "El alumno tiene carga `{"{{CL}}"}`. Genera un consejo".
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+                             {/* Help Section */}
+                             <div className="mt-8 pt-8 border-t border-slate-100">
+                                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-600 mb-6 flex items-center gap-2">
+                                     <HelpCircle className="w-4 h-4" /> Gua de Estructura
+                                 </h3>
+                                 <div className="space-y-5">
+                                     <div className="flex gap-4">
+                                         <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                                         <p className="text-[10px] text-slate-500 leading-relaxed font-medium">
+                                             <strong className="text-slate-700">System:</strong> Define la personalidad. Ej: "Eres un mentor socrtico que nunca da la respuesta".
+                                         </p>
+                                     </div>
+                                     <div className="flex gap-4">
+                                         <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
+                                         <p className="text-[10px] text-slate-500 leading-relaxed font-medium">
+                                             <strong className="text-slate-700">Developer:</strong> Define los datos. Ej: "El alumno tiene carga `{"{{CL}}"}`. Genera un consejo".
+                                         </p>
+                                     </div>
+                                 </div>
+                             </div>
+                         </section>
                     </div>
                 </div>
             </div>
 
             <style jsx global>{`
                 .glass {
-                    background: rgba(255, 255, 255, 0.02);
+                    background: rgba(255, 255, 255, 0.7);
                     backdrop-filter: blur(40px);
                     -webkit-backdrop-filter: blur(40px);
                 }
@@ -295,7 +295,7 @@ export default function PromptManagement() {
                     width: 6px;
                 }
                 textarea::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.05);
+                    background: rgba(0, 0, 0, 0.05);
                     border-radius: 10px;
                 }
             `}</style>
