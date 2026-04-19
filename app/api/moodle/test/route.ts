@@ -1,25 +1,50 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const moodleUrl = searchParams.get('url') || process.env.MOODLE_URL;
     const moodleToken = searchParams.get('token') || process.env.MOODLE_TOKEN;
 
+    return runMoodleTest(moodleUrl, moodleToken);
+}
+
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+        let { url, token } = body;
+
+        // If token is missing (masked in UI), try to find it in DB
+        if (!token || token === '********') {
+            const config = await prisma.systemConfig.findUnique({ where: { key: 'moodle_token' } });
+            if (config) token = config.value;
+        }
+
+        // If url is missing, try to find it in DB
+        if (!url) {
+            const config = await prisma.systemConfig.findUnique({ where: { key: 'moodle_url' } });
+            if (config) url = config.value;
+        }
+
+        return runMoodleTest(url || process.env.MOODLE_URL, token || process.env.MOODLE_TOKEN);
+    } catch (e) {
+        return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 });
+    }
+}
+
+async function runMoodleTest(moodleUrl: string | undefined, moodleToken: string | undefined) {
     if (!moodleUrl || !moodleToken) {
-        return NextResponse.json({ success: false, error: 'Missing Moodle URL or Token. Check environment variables or local settings.' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Missing Moodle URL or Token.' }, { status: 400 });
     }
 
     try {
         const cleanUrl = moodleUrl.replace(/\/$/, ""); 
-        
-        // Use a safe global endpoint that doesn't require course parameters or heavy permissions
         const endpoint = `${cleanUrl}/webservice/rest/server.php?wstoken=${moodleToken}&wsfunction=core_webservice_get_site_info&moodlewsrestformat=json`;
         
         const response = await fetch(endpoint, {
             method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: { 'Accept': 'application/json' },
+            signal: AbortSignal.timeout(5000)
         });
 
         if (!response.ok) {
@@ -28,16 +53,14 @@ export async function GET(request: Request) {
 
         const data = await response.json();
 
-        // Check internal Moodle API errors
         if (data.exception || data.errorcode) {
             return NextResponse.json({ 
                 success: false, 
                 error: data.message || 'Moodle API Error', 
                 code: data.errorcode 
-            }, { status: 200 }); // Return 200 so the frontend can parse the Moodle rejection nicely
+            });
         }
 
-        // Output success if valid info comes back
         if (data.sitename) {
             return NextResponse.json({ 
                 success: true, 
@@ -52,7 +75,6 @@ export async function GET(request: Request) {
         return NextResponse.json({ success: false, error: 'Unexpected response format' });
 
     } catch (error: any) {
-        console.error("Moodle Test Query Error:", error);
         return NextResponse.json({ success: false, error: error.message || "Failed to reach server" });
     }
 }

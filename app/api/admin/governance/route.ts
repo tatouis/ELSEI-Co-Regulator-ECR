@@ -3,8 +3,16 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const moodleUrl = process.env.MOODLE_URL || 'https://lms25.e-lsei.com';
-    const moodleToken = process.env.MOODLE_TOKEN || '435af4165f459ef07232a8608ddd9647';
+    // Priority: DB Config -> ENV -> Hardcoded Fallback
+    const configs = await prisma.systemConfig.findMany({
+      where: { key: { in: ['moodle_url', 'moodle_token'] } }
+    });
+
+    const dbUrl = configs.find(c => c.key === 'moodle_url')?.value;
+    const dbToken = configs.find(c => c.key === 'moodle_token')?.value;
+
+    const moodleUrl = dbUrl || process.env.MOODLE_URL || 'https://lms25.e-lsei.com';
+    const moodleToken = dbToken || process.env.MOODLE_TOKEN || '435af4165f459ef07232a8608ddd9647';
     const cleanUrl = moodleUrl.replace(/\/$/, "");
 
     const fetchMoodle = async (wsfunction: string, extras = '') => {
