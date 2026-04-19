@@ -66,16 +66,16 @@ export async function GET() {
     // 4. NEW: Live Audit Trail (Recent high-impact events)
     const recentInterventions = await prisma.intervention.findMany({
       take: 10,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { timestamp: 'desc' },
       include: { user: { select: { displayName: true } } }
     });
 
     const liveEvents = recentInterventions.map(i => ({
       id: i.id,
-      timestamp: i.createdAt,
+      timestamp: i.timestamp,
       type: 'intervention',
       user: i.user?.displayName || 'Estudiante',
-      description: `Gemini intervino: ${i.type}`,
+      description: `Gemini intervino: ${i.interventionType}`,
       status: i.reaction || 'SENT'
     }));
 
