@@ -45,7 +45,7 @@ export async function GET() {
 
           let pulseCount = 0;
           let interventionCount = 0;
-          let recentLogs = [];
+          let recentLogs: any[] = [];
 
           if (ecrUser) {
             pulseCount = await prisma.learnerState.count({ where: { userId: ecrUser.id } });
@@ -53,8 +53,8 @@ export async function GET() {
             recentLogs = await prisma.intervention.findMany({
                 where: { userId: ecrUser.id },
                 take: 5,
-                orderBy: { createdAt: 'desc' },
-                select: { createdAt: true, type: true, reaction: true }
+                orderBy: { timestamp: 'desc' },
+                select: { timestamp: true, interventionType: true, reaction: true }
             });
           }
 
