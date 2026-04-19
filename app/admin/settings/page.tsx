@@ -19,6 +19,7 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [testError, setTestError] = useState('');
 
   useEffect(() => {
     fetch('/api/admin/config')
@@ -77,13 +78,21 @@ export default function AdminSettings() {
       
       if (res.ok) {
         const data = await res.json();
-        if (data.success) setTestStatus('success');
-        else setTestStatus('error');
+        if (data.success) {
+            setTestStatus('success');
+            setTestError('');
+        } else {
+            setTestStatus('error');
+            setTestError(data.error || 'Error desconocido');
+        }
       } else {
+        const errData = await res.json().catch(() => ({}));
         setTestStatus('error');
+        setTestError(errData.error || `HTTP ${res.status}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       setTestStatus('error');
+      setTestError(err.message || 'Fallo de red');
     }
   };
 
@@ -167,9 +176,12 @@ export default function AdminSettings() {
                             </span>
                         )}
                         {testStatus === 'error' && (
-                            <span className="text-[10px] text-rose-400 font-bold flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3" /> Error de Conexión
-                            </span>
+                            <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-rose-400 font-bold flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" /> Error de Conexión
+                                </span>
+                                <span className="text-[9px] text-rose-300/70 font-mono ml-4">{testError}</span>
+                            </div>
                         )}
                     </div>
                 </div>

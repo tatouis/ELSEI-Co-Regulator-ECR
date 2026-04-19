@@ -75,6 +75,21 @@ async function runMoodleTest(moodleUrl: string | undefined, moodleToken: string 
         return NextResponse.json({ success: false, error: 'Unexpected response format' });
 
     } catch (error: any) {
-        return NextResponse.json({ success: false, error: error.message || "Failed to reach server" });
+        let errorMessage = 'Failed to reach server';
+        let detail = error.message;
+
+        if (error.name === 'TimeoutError' || error.message.includes('timeout')) {
+            errorMessage = 'Network Timeout: El servidor Moodle tarda mucho en responder.';
+        } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
+            errorMessage = 'DNS Error: No se puede encontrar el dominio del servidor Moodle.';
+        } else if (error.message.includes('ECONNREFUSED')) {
+            errorMessage = 'Connection Refused: El servidor Moodle rechaz la conexin.';
+        }
+
+        return NextResponse.json({ 
+            success: false, 
+            error: errorMessage,
+            detail: detail
+        });
     }
 }
