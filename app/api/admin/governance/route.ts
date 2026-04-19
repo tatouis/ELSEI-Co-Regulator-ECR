@@ -25,11 +25,14 @@ export async function GET(request: Request) {
 
     let sampleData: any = { Courses: [], Students: [], Grades: [], Contents: [], Dictionary: {} };
 
-    const addToDictionary = (source: string, obj: any) => {
+    const addToDictionary = (source: string, obj: any, category: string) => {
         if (!obj || typeof obj !== 'object') return;
+        if (!sampleData.Dictionary[category]) {
+            sampleData.Dictionary[category] = {};
+        }
         Object.keys(obj).forEach(key => {
             // We keep the first example found or update if it's currently null
-            if (!sampleData.Dictionary[key] || (sampleData.Dictionary[key].example === null && obj[key] !== null)) {
+            if (!sampleData.Dictionary[category][key] || (sampleData.Dictionary[category][key].example === null && obj[key] !== null)) {
                 const val = obj[key];
                 let example = val;
                 
@@ -38,7 +41,7 @@ export async function GET(request: Request) {
                     example = val.substring(0, 97) + '...';
                 }
                 
-                sampleData.Dictionary[key] = { 
+                sampleData.Dictionary[category][key] = { 
                     source, 
                     type: Array.isArray(val) ? 'array' : (val === null ? 'null' : typeof val),
                     example: example
@@ -50,13 +53,13 @@ export async function GET(request: Request) {
     try {
       // 1. Platform-level metadata
       const siteInfo = await fetchMoodle('core_webservice_get_site_info');
-      addToDictionary('core_webservice_get_site_info', siteInfo);
+      addToDictionary('core_webservice_get_site_info', siteInfo, 'Platform Configuration');
 
       // 2. Course-level metadata
       const courses = await fetchMoodle('core_course_get_courses');
       const realCourses = Array.isArray(courses) ? courses.filter((c: any) => c.id !== 1).slice(0, 10) : [];
       sampleData.Courses = realCourses;
-      if (realCourses.length > 0) addToDictionary('core_course_get_courses', realCourses[0]);
+      if (realCourses.length > 0) addToDictionary('core_course_get_courses', realCourses[0], 'Course Module');
 
       if (realCourses.length > 0) {
         const courseId = requestedCourseId ? parseInt(requestedCourseId) : realCourses[0].id;
@@ -65,13 +68,26 @@ export async function GET(request: Request) {
         const contents = await fetchMoodle('core_course_get_contents', `&courseid=${courseId}`);
         sampleData.Contents = Array.isArray(contents) ? contents : [];
         if (sampleData.Contents.length > 0 && sampleData.Contents[0].modules?.length > 0) {
-            addToDictionary('core_course_get_contents', sampleData.Contents[0].modules[0]);
+            addToDictionary('core_course_get_contents', sampleData.Contents[0].modules[0], 'Course Activities');
         }
 
         // 4. Enrollment & User-level metadata
         const users = await fetchMoodle('core_enrol_get_enrolled_users', `&courseid=${courseId}`);
         const moodleStudents = Array.isArray(users) ? users.filter((u: any) => u.roles?.some((r: any) => r.shortname === 'student') || u.roles?.length === 0) : [];
-        if (moodleStudents.length > 0) addToDictionary('core_enrol_get_enrolled_users', moodleStudents[0]);
+        if (moodleStudents.length > 0) {
+            addToDictionary('core_enrol_get_enrolled_users', moodleStudents[0], 'Student Enrollment');
+            
+            // 4.5. Deep User Profile Data
+            try {
+                const userId = moodleStudents[0].id;
+                const userDetails = await fetchMoodle('core_user_get_users_by_field', `&field=id&values[0]=${userId}`);
+                if (Array.isArray(userDetails) && userDetails.length > 0) {
+                    addToDictionary('core_user_get_users_by_field', userDetails[0], 'Deep User Profile');
+                }
+            } catch(e) {
+                console.warn("Could not fetch deep user profile", e);
+            }
+        }
 
         // Enhance Moodle data with ECR intelligence
         const students = [];
@@ -103,7 +119,7 @@ export async function GET(request: Request) {
             if (comp && comp.statuses) {
                 completionStatus = comp.statuses;
                 if (comp.statuses.length > 0) {
-                    addToDictionary('core_completion_get_activities_completion_status', comp.statuses[0]);
+                    addToDictionary('core_completion_get_activities_completion_status', comp.statuses[0], 'Activity Completion');
                 }
             }
           } catch (e) {
@@ -127,7 +143,7 @@ export async function GET(request: Request) {
             if (grades && grades.usergrades && grades.usergrades.length > 0) {
                 sampleData.Grades = grades.usergrades[0].gradeitems.filter((item: any) => item.itemtype !== 'course');
                 if (sampleData.Grades.length > 0) {
-                    addToDictionary('gradereport_user_get_grade_items', sampleData.Grades[0]);
+                    addToDictionary('gradereport_user_get_grade_items', sampleData.Grades[0], 'Grades & Assessment');
                 }
             }
         }
