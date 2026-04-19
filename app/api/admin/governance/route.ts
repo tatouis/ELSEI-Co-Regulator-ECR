@@ -81,6 +81,34 @@ export async function GET(request: Request) {
             addToDictionary('core_course_get_contents', sampleData.Contents[0].modules[0], 'Course Activities');
         }
 
+        // 3.1 Course Specific Modules (Assignments, Quizzes, Forums)
+        try {
+            const assigns = await fetchMoodle('mod_assign_get_assignments', `&courseids[0]=${courseId}`);
+            if (assigns && assigns.courses && assigns.courses.length > 0 && assigns.courses[0].assignments.length > 0) {
+                addToDictionary('mod_assign_get_assignments', assigns.courses[0].assignments[0], 'Assignments');
+            }
+        } catch (e) {
+            console.warn('Could not fetch assignments', e);
+        }
+
+        try {
+            const quizzes = await fetchMoodle('mod_quiz_get_quizzes_by_courses', `&courseids[0]=${courseId}`);
+            if (quizzes && quizzes.quizzes && quizzes.quizzes.length > 0) {
+                addToDictionary('mod_quiz_get_quizzes_by_courses', quizzes.quizzes[0], 'Quizzes');
+            }
+        } catch (e) {
+            console.warn('Could not fetch quizzes', e);
+        }
+
+        try {
+            const forums = await fetchMoodle('mod_forum_get_forums_by_courses', `&courseids[0]=${courseId}`);
+            if (Array.isArray(forums) && forums.length > 0) {
+                addToDictionary('mod_forum_get_forums_by_courses', forums[0], 'Forums');
+            }
+        } catch (e) {
+            console.warn('Could not fetch forums', e);
+        }
+
         // 4. Enrollment & User-level metadata
         const users = await fetchMoodle('core_enrol_get_enrolled_users', `&courseid=${courseId}`);
         const moodleStudents = Array.isArray(users) ? users.filter((u: any) => u.roles?.some((r: any) => r.shortname === 'student') || u.roles?.length === 0) : [];
