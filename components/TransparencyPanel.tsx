@@ -4,40 +4,43 @@ import { motion } from 'framer-motion';
 import { useSim } from '@/lib/simulationStore';
 import { Eye, Database, Clock, BarChart3, AlertOctagon } from 'lucide-react';
 
+import { useTranslation } from '@/lib/LanguageContext';
+
 export default function TransparencyPanel() {
+    const { t } = useTranslation();
     const { currentLearner } = useSim();
     const { features, state } = currentLearner;
 
     const signals = [
         {
             icon: Clock,
-            label: 'Time since last action',
+            label: t('admin.governance.fields.interactionTime').split('(')[0].trim() || 'Interaction Time',
             value: `${Math.round(features.timeSinceLastAction)}s`,
-            note: 'How long since your last click/interaction',
+            note: t('admin.governance.fields.interactionDesc'),
         },
         {
             icon: AlertOctagon,
-            label: 'Retry count',
+            label: t('student.performance.retries'),
             value: String(features.retryCount),
-            note: 'Number of repeated attempts on the same content',
+            note: t('instructor.charts.realTime'),
         },
         {
             icon: BarChart3,
-            label: 'Navigation speed',
+            label: t('instructor.charts.heatmap'),
             value: `${features.navigationSpeed.toFixed(1)} pg/min`,
-            note: "How fast you're moving through pages",
+            note: t('instructor.charts.heatmapDesc'),
         },
         {
             icon: Clock,
-            label: 'Inactivity streak',
+            label: t('admin.governance.studentTable.time'),
             value: `${Math.round(features.inactivityStreak)}s`,
-            note: 'Consecutive seconds without any activity',
+            note: t('admin.governance.fields.interactionDesc'),
         },
         {
             icon: Database,
-            label: 'Error rate',
+            label: t('admin.governance.governance.moodleExplorer'),
             value: `${Math.round(features.errorRate * 100)}%`,
-            note: 'Proportion of incorrect attempts',
+            note: t('admin.governance.fields.gradeItemsDesc'),
         },
     ];
 
@@ -46,8 +49,8 @@ export default function TransparencyPanel() {
             <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-violet-600" />
                 <div>
-                    <h3 className="font-semibold text-slate-800">What the System Sees</h3>
-                    <p className="text-xs text-slate-500">All signals used to estimate your state</p>
+                    <h3 className="font-semibold text-slate-800">{t('student.transparency.title')}</h3>
+                    <p className="text-xs text-slate-500">{t('student.transparency.subtitle')}</p>
                 </div>
             </div>
 
@@ -74,8 +77,7 @@ export default function TransparencyPanel() {
 
             <div className="pt-2 border-t border-white/40">
                 <p className="text-[10px] text-slate-400 leading-relaxed">
-                    ⚠️ No keystrokes, biometrics, or webcam data are ever collected.
-                    Only anonymized interaction patterns are used.
+                    ⚠️ {t('student.transparency.privacyNotice')}
                 </p>
             </div>
         </div>

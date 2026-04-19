@@ -70,6 +70,8 @@ const CL_COLORS: Record<StateLevel, string> = {
     high: '#ef4444',
 };
 
+import { useTranslation } from '@/lib/LanguageContext';
+
 export function LearnerStateWidget({
     cognitiveLoad,
     attention,
@@ -81,23 +83,31 @@ export function LearnerStateWidget({
     motivation: StateLevel;
     confidence: number;
 }) {
+    const { t } = useTranslation();
+
+    const LEVEL_CONFIG_LOCAL = {
+        low: { value: 0.2, label: t('common.low'), textColor: 'text-emerald-600', bgColor: 'bg-emerald-500' },
+        medium: { value: 0.55, label: t('common.medium'), textColor: 'text-amber-600', bgColor: 'bg-amber-500' },
+        high: { value: 0.9, label: t('common.high'), textColor: 'text-red-600', bgColor: 'bg-red-500' },
+    };
+
     const gauges: GaugeProps[] = [
         {
-            label: 'Cognitive Load',
+            label: t('admin.governance.fields.interactionTime').split('(')[0].trim() || 'Cognitive Load',
             level: cognitiveLoad,
             confidence,
             color: CL_COLORS[cognitiveLoad],
             icon: '🧠',
         },
         {
-            label: 'Attention',
+            label: t('instructor.kpis.lowAtt').replace(t('common.low'), '').trim(),
             level: attention,
             confidence,
             color: GAUGE_COLORS[attention === 'high' ? 'low' : attention === 'low' ? 'high' : 'medium'],
             icon: '👁️',
         },
         {
-            label: 'Motivation',
+            label: t('instructor.kpis.lowMot').replace(t('common.low'), '').trim(),
             level: motivation,
             confidence,
             color: GAUGE_COLORS[motivation === 'high' ? 'low' : motivation === 'low' ? 'high' : 'medium'],
@@ -105,12 +115,16 @@ export function LearnerStateWidget({
         },
     ];
 
+    // Manual overrides for labels if regex/replace is too fragile
+    gauges[0].label = t('admin.governance.fields.interactionTime').includes('Cognitive') ? t('admin.governance.fields.interactionTime') : "Cognitive Load";
+    if (t('instructor.kpis.highLoad').includes('Cognitive')) gauges[0].label = t('instructor.kpis.highLoad').replace(t('common.high'), '').trim();
+
     return (
         <div className="glass rounded-3xl p-5">
             <div className="flex items-center justify-between mb-4">
                 <div>
-                    <h3 className="font-semibold text-slate-800">Learning State</h3>
-                    <p className="text-xs text-slate-500">Real-time estimation</p>
+                    <h3 className="font-semibold text-slate-800">{t('instructor.charts.learningState')}</h3>
+                    <p className="text-xs text-slate-500">{t('instructor.charts.realTime')}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 blink"></span>
@@ -120,7 +134,7 @@ export function LearnerStateWidget({
 
             <div className="grid grid-cols-3 gap-3">
                 {gauges.map(({ label, level, color, icon }) => {
-                    const config = LEVEL_CONFIG[level];
+                    const config = LEVEL_CONFIG_LOCAL[level];
                     return (
                         <motion.div
                             key={label}
@@ -143,7 +157,7 @@ export function LearnerStateWidget({
             </div>
 
             <div className="mt-4 pt-3 border-t border-white/40 flex items-center justify-between">
-                <span className="text-xs text-slate-500">Confidence</span>
+                <span className="text-xs text-slate-500">{t('admin.governance.studentTable.progress')}</span>
                 <div className="flex items-center gap-2">
                     <div className="w-24 h-1.5 bg-white/30 rounded-full overflow-hidden">
                         <motion.div

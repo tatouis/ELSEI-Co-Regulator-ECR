@@ -10,7 +10,10 @@ import StudentSelectorModal from './StudentSelectorModal';
 import { useSim } from '@/lib/simulationStore';
 import { useRouter } from 'next/navigation';
 
+import { useTranslation } from '@/lib/LanguageContext';
+
 export default function Navbar() {
+    const { t, locale, setLocale } = useTranslation();
     const path = usePathname();
     const router = useRouter();
     const { user, logout } = useSim();
@@ -59,7 +62,7 @@ export default function Navbar() {
                                             />
                                         )}
                                         <Users className="w-3.5 h-3.5 relative z-10" />
-                                        <span className="relative z-10 hidden sm:inline">Overview</span>
+                                        <span className="relative z-10 hidden sm:inline">{t('nav.dashboard')}</span>
                                     </Link>
                                 )}
 
@@ -74,7 +77,7 @@ export default function Navbar() {
                                                 }`}
                                         >
                                             <ShieldAlert className="w-3.5 h-3.5 relative z-10" />
-                                            <span className="relative z-10 hidden sm:inline">Admin</span>
+                                            <span className="relative z-10 hidden sm:inline">{t('nav.dashboard')}</span>
                                         </Link>
                                         <Link
                                             href="/admin/prompts"
@@ -84,7 +87,7 @@ export default function Navbar() {
                                                 }`}
                                         >
                                             <Terminal className="w-3.5 h-3.5 relative z-10" />
-                                            <span className="relative z-10 hidden sm:inline text-xs">Prompts</span>
+                                            <span className="relative z-10 hidden sm:inline text-xs">{t('nav.prompts')}</span>
                                         </Link>
                                         <Link
                                             href="/admin/settings"
@@ -94,12 +97,12 @@ export default function Navbar() {
                                                 }`}
                                         >
                                             <Settings className="w-3.5 h-3.5 relative z-10" />
-                                            <span className="relative z-10 hidden sm:inline text-xs underline font-black">Configuración</span>
+                                            <span className="relative z-10 hidden sm:inline text-xs underline font-black">{t('nav.settings')}</span>
                                         </Link>
                                     </div>
                                 )}
                                 
-                                {/* Settings */}
+                                {/* Settings (Instructor) */}
                                 {user.role === 'instructor' && (
                                     <Link
                                         href="/instructor/settings"
@@ -116,7 +119,7 @@ export default function Navbar() {
                                             />
                                         )}
                                         <Settings className="w-3.5 h-3.5 relative z-10" />
-                                        <span className="relative z-10 hidden sm:inline">Settings</span>
+                                        <span className="relative z-10 hidden sm:inline">{t('nav.settings')}</span>
                                     </Link>
                                 )}
 
@@ -126,7 +129,7 @@ export default function Navbar() {
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors ml-2"
                                 >
                                     <LogOut className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline">Logout</span>
+                                    <span className="hidden sm:inline">{t('nav.logout')}</span>
                                 </button>
                             </>
                         ) : (
@@ -135,18 +138,36 @@ export default function Navbar() {
                                 className="flex items-center gap-1.5 px-4 py-1.5 bg-violet-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-violet-200 hover:bg-violet-700 transition-all active:scale-95"
                             >
                                 <LogIn className="w-3.5 h-3.5" />
-                                Login
+                                {t('nav.login')}
                             </Link>
                         )}
                     </div>
 
-                    {/* ENS badge */}
-                    <div className="hidden md:flex items-center gap-2 text-xs text-slate-500">
-                        <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center">
-                            <span className="text-white text-[8px] font-bold">ENS</span>
+                    {/* Language Switcher & ENS badge */}
+                    <div className="hidden md:flex items-center gap-4 text-xs">
+                        {/* EN/FR Toggle */}
+                        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                            <button 
+                                onClick={() => setLocale('en')}
+                                className={`px-2 py-0.5 rounded-md transition-all font-bold ${locale === 'en' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                EN
+                            </button>
+                            <button 
+                                onClick={() => setLocale('fr')}
+                                className={`px-2 py-0.5 rounded-md transition-all font-bold ${locale === 'fr' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                FR
+                            </button>
                         </div>
-                        {user && <span className="font-bold text-slate-700">{user.username}</span>}
-                        {!user && <span>Master ELSEI</span>}
+
+                        <div className="flex items-center gap-2 text-slate-500">
+                            <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center">
+                                <span className="text-white text-[8px] font-bold">ENS</span>
+                            </div>
+                            {user && <span className="font-bold text-slate-700">{user.username}</span>}
+                            {!user && <span>Master ELSEI</span>}
+                        </div>
                     </div>
                 </div>
             </nav>

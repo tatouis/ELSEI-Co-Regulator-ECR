@@ -1,0 +1,176 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "governance": "Governance",
+    "settings": "Settings",
+    "logs": "Logs",
+    "prompts": "Prompts",
+    "logout": "Logout",
+    "login": "Login",
+    "portal": "Access Portal"
+  },
+  "common": {
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "back": "Back",
+    "search": "Search",
+    "actions": "Actions",
+    "status": "Status",
+    "date": "Date",
+    "user": "User",
+    "course": "Course",
+    "details": "Details",
+    "soon": "Soon"
+  },
+  "admin": {
+    "title": "Administrative Governance",
+    "welcome": "Control Console",
+    "description": "Monitor system integrity, Moodle synchronization, and AI intervention policies.",
+    "stats": {
+      "activeUsers": "Active Users",
+      "totalInterventions": "Total Interventions",
+      "moodleStatus": "Moodle Status",
+      "systemHealth": "System Health"
+    },
+    "governance": {
+        "title": "Data Governance & Transparency",
+        "moodleExplorer": "Moodle Data Explorer",
+        "dictionary": "Data Dictionary (Moodle + ECR)",
+        "showDictionary": "Show Dictionary",
+        "hideDictionary": "Hide Dictionary",
+        "syncStatus": "Moodle Sync Status",
+        "connected": "Connected",
+        "fields": {
+            "fullName": "Full Name / Username",
+            "identityDesc": "Student identity synchronized directly from the Moodle core.",
+            "interactionTime": "Interaction Time (Min)",
+            "interactionDesc": "Estimated usage time based on activity pulses (1 pulse = 10 sec).",
+            "interventions": "Total Interventions",
+            "interventionsDesc": "Total count of Gemini suggestions generated for this user.",
+            "moodleId": "Moodle UID",
+            "moodleIdDesc": "Unique primary key of the user in the external Moodle database.",
+            "gradeItems": "Grade Items",
+            "gradeItemsDesc": "Results of tasks and exams obtained via the Moodle API."
+        },
+        "tabs": {
+            "students": "Students",
+            "metadata": "Metadata Discovery",
+            "audit": "Performance Audit"
+        },
+        "studentTable": {
+            "name": "Student",
+            "progress": "Progress",
+            "grades": "Grades",
+            "interventions": "Interventions",
+            "time": "Time (Min)",
+            "lastSync": "Last Sync"
+        }
+    },
+    "settings": {
+        "title": "Global Configuration",
+        "description": "Manage system credentials and integration with external services.",
+        "moodle": {
+            "title": "Moodle Integration (LMS)",
+            "url": "Moodle Site URL",
+            "urlPlaceholder": "https://your-moodle.com",
+            "token": "Web Service Token",
+            "tokenPlaceholder": "Enter Moodle token",
+            "test": "Test Connection",
+            "success": "Connection Successful",
+            "error": "Connection Failed",
+            "desc": "The base URL of your Moodle installation.",
+            "tokenDesc": "Token obtained in 'Site Administration > Plugins > Web Services > Tokens'."
+        },
+        "ai": {
+            "title": "Artificial Intelligence (Gemini)",
+            "key": "Google Gemini API Key",
+            "keyPlaceholder": "Enter Gemini API Key"
+        },
+        "saveConfig": "SAVE CONFIGURATION",
+        "configUpdated": "Configuration updated successfully.",
+        "serverError": "Error connecting to the server.",
+        "backToConsole": "Back to Console",
+        "save": "Save Settings",
+        "saved": "Saved Successfully!",
+        "test": "Test Connection",
+        "connected": "Connected to",
+        "moodleUrl": "Platform URL",
+        "moodleToken": "REST API Token",
+        "gemini": "Google Gemini AI",
+        "geminiKey": "Gemini API Key"
+    },
+    "logs": {
+        "title": "System Logs",
+        "description": "Real-time auditing of user actions, AI interventions, and system events.",
+        "table": {
+            "timestamp": "Timestamp",
+            "user": "User",
+            "action": "Action",
+            "module": "Module",
+            "details": "Details"
+        }
+    },
+    "prompts": {
+        "title": "AI Intervention Policies",
+        "description": "Configure the scenarios and metacognitive prompts used by the AI Co-Regulator.",
+        "table": {
+            "type": "Intervention Type",
+            "condition": "Trigger Condition",
+            "prompt": "Base Prompt",
+            "active": "Active"
+        }
+    }
+  },
+  "instructor": {
+    "title": "Instructor Analytics",
+    "subtitle": "Class Cognitive Regulation Overview",
+    "learners": "Learners",
+    "globalOverview": "Global Overview",
+    "kpis": {
+        "highLoad": "High Cognitive Load",
+        "lowAtt": "Low Attention",
+        "lowMot": "Low Motivation",
+        "interventions": "Interventions Today"
+    },
+    "charts": {
+        "timeline": "Attention & Motivation Timeline",
+        "timelineDesc": "Class-average over current session",
+        "risk": "Motivation Risk",
+        "riskDesc": "Current class distribution",
+        "bottlenecks": "Moodle Module Bottlenecks",
+        "telemetry": "Live Moodle Telemetry",
+        "heatmap": "Class State Heatmap",
+        "heatmapDesc": "Click a learner to drill down (privacy-aware)"
+    },
+    "interventions": {
+        "support": "Pedagogical Support",
+        "footer": "Based on activity patterns",
+        "success1": "Good progress — keep going.",
+        "success2": "Nice focus recovery.",
+        "success3": "You’re back on track."
+    }
+  },
+  "student": {
+    "activity": {
+        "title": "Current Activity",
+        "quizStatus": "Quiz — No interruptions"
+    },
+    "performance": {
+        "summary": "Weekly Self-Regulation",
+        "weeklyAvg": "Summary of your learning patterns this week",
+        "time": "Session Time",
+        "retries": "Retries"
+    },
+    "transparency": {
+        "title": "What the System Sees",
+        "subtitle": "All signals used to estimate your state",
+        "privacyNotice": "No keystrokes, biometrics, or webcam data are ever collected. Only anonymized interaction patterns are used."
+    }
+  }
+}

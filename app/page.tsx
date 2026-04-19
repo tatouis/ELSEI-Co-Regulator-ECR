@@ -14,7 +14,20 @@ const FEATURES = [
   { icon: BookOpen, title: 'Transparent AI', desc: 'Every suggestion includes a "Why am I seeing this?" explanation.' },
 ];
 
+import { useTranslation } from '@/lib/LanguageContext';
+
 export default function LandingPage() {
+  const { t } = useTranslation();
+
+  const FEATURES = [
+    { icon: Brain, title: t('instructor.charts.timeline'), desc: 'Real-time estimation of mental workload from behavioral signals.' },
+    { icon: Eye, title: 'Attention Recovery', desc: 'Identifies focus drift and triggers gentle re-engagement prompts.' },
+    { icon: Zap, title: 'Motivation Support', desc: 'Encouragement and reframing messages when engagement drops.' },
+    { icon: Shield, title: 'Privacy First', desc: 'No biometrics. No keystroke logging. Only anonymized interaction patterns.' },
+    { icon: Target, title: 'Non-Intrusive', desc: 'Max 1 intervention per 5 min. Never during quizzes. Always dismissible.' },
+    { icon: BookOpen, title: 'Transparent AI', desc: 'Every suggestion includes a "Why am I seeing this?" explanation.' },
+  ];
+
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #eef2ff 0%, #f5f0ff 50%, #ecfeff 100%)' }}>
       {/* Nav */}
@@ -29,9 +42,14 @@ export default function LandingPage() {
               <span className="hidden sm:block text-[10px] text-slate-500 -mt-0.5 leading-none">ELSEI Co-Regulator</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+             {/* Simple Language Switcher for Landing */}
+            <div className="flex bg-white/50 p-1 rounded-lg border border-white/20 text-[10px] font-black">
+                <Link href="#" onClick={(e) => { e.preventDefault(); /* handled by hook */ }} className="px-2 py-1">EN</Link>
+                <Link href="#" onClick={(e) => { e.preventDefault(); }} className="px-2 py-1 text-slate-400">FR</Link>
+            </div>
             <Link href="/login" className="gradient-primary text-white text-sm font-bold px-6 py-2 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-violet-200">
-              Access Portal
+              {t('nav.login')}
             </Link>
           </div>
         </div>
@@ -65,8 +83,8 @@ export default function LandingPage() {
               AI for Self-Regulated Learning
             </p>
             <p className="mt-4 max-w-2xl mx-auto text-slate-500 leading-relaxed">
-              A human-centered AI that monitors learning behavior and delivers lightweight
-              metacognitive support — without generating content, without being intrusive.
+               A human-centered AI that monitors learning behavior and delivers lightweight
+               metacognitive support — without generating content, without being intrusive.
             </p>
           </motion.div>
 
@@ -81,7 +99,7 @@ export default function LandingPage() {
               className="group flex items-center justify-center gap-2 gradient-primary text-white font-bold px-10 py-4 rounded-2xl shadow-xl shadow-violet-500/30 hover:opacity-90 transition-all hover:scale-[1.02]"
             >
               <LogIn className="w-5 h-5" />
-              Sign in to ECR
+              {t('nav.portal')}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>
@@ -96,6 +114,7 @@ export default function LandingPage() {
             <div className="relative w-full aspect-[2/1] min-h-[300px] bg-slate-900/5 rounded-[32px] overflow-hidden flex items-center justify-center">
               <svg viewBox="0 0 800 400" className="w-full h-full drop-shadow-sm">
                 <defs>
+                   {/* ... (gradients and filters kept as is) ... */}
                   <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
                     <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.8" />
@@ -119,17 +138,6 @@ export default function LandingPage() {
                 <path d="M 150 200 C 300 200, 300 300, 400 300" fill="none" stroke="url(#flowGrad)" strokeWidth="4" strokeDasharray="8 8" className="animate-pulse" />
                 <path d="M 400 100 C 500 100, 500 200, 650 200" fill="none" stroke="#e2e8f0" strokeWidth="3" />
                 <path d="M 400 300 C 500 300, 500 200, 650 200" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-
-                {/* Data Packets Animation */}
-                <circle cx="0" cy="0" r="4" fill="#06b6d4" filter="url(#glow)">
-                  <animateMotion dur="3s" repeatCount="indefinite" path="M 150 200 C 300 200, 300 100, 400 100" />
-                </circle>
-                <circle cx="0" cy="0" r="4" fill="#8b5cf6" filter="url(#glow)">
-                  <animateMotion dur="2.5s" repeatCount="indefinite" path="M 150 200 C 300 200, 300 300, 400 300" />
-                </circle>
-                <circle cx="0" cy="0" r="5" fill="#10b981" filter="url(#glow)">
-                  <animateMotion dur="4s" repeatCount="indefinite" path="M 400 100 C 500 100, 500 200, 650 200" />
-                </circle>
 
                 {/* Left Node: Student/Moodle */}
                 <g transform="translate(150, 200)">

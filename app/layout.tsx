@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   keywords: ['learning analytics', 'self-regulated learning', 'metacognition', 'ELSEI', 'ENS'],
 };
 
+import { LanguageProvider } from '@/lib/LanguageContext';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -17,7 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="antialiased">
-        <SimulationProvider>{children}</SimulationProvider>
+        <LanguageProvider>
+          <SimulationProvider>{children}</SimulationProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

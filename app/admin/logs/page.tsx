@@ -3,7 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+import { useTranslation } from '@/lib/LanguageContext';
+import Navbar from '@/components/Navbar';
+
 export default function AdminLogs() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,23 +21,24 @@ export default function AdminLogs() {
   }, []);
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center text-slate-800">
-      <div className="animate-pulse text-xl font-light tracking-widest text-indigo-600 uppercase italic">Sincronizando registros de eventos...</div>
+    <div className="min-h-screen flex items-center justify-center text-slate-800 bg-white">
+      <div className="animate-pulse text-xl font-black tracking-[0.3em] text-indigo-600 uppercase italic">{t('common.loading')}</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen text-slate-900 p-8 font-sans selection:bg-indigo-500/10">
-      <div className="max-w-7xl mx-auto pt-16">
+    <div className="min-h-screen text-slate-900 font-sans selection:bg-indigo-500/10">
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-4 pt-24 pb-12">
         <header className="mb-12">
-          <Link href="/admin" className="text-indigo-600 hover:text-indigo-700 font-bold mb-4 inline-block text-sm transition-all hover:translate-x-[-4px]">
-            ← Volver a la Consola
+          <Link href="/admin" className="text-indigo-600 hover:text-indigo-700 font-bold mb-4 inline-flex items-center gap-2 text-sm transition-all hover:-translate-x-1">
+            <span className="rotate-180 inline-block font-bold">→</span> {t('admin.settings.backToConsole')}
           </Link>
           <h1 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-indigo-600 mb-2">
-            Registros del Sistema (Logs)
+            {t('admin.logs.title')}
           </h1>
           <p className="text-slate-500 font-medium max-w-2xl">
-            Trazabilidad completa de acciones, llamadas API y eventos del sistema en tiempo real.
+            {t('admin.logs.description')}
           </p>
         </header>
 
@@ -41,7 +46,7 @@ export default function AdminLogs() {
           <div className="p-8 border-b border-slate-50 flex justify-between items-center">
             <h2 className="text-lg font-black flex items-center text-slate-800">
                <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 mr-3 animate-pulse shadow-sm shadow-indigo-500"></span>
-               Eventos Recientes
+               Recent Events
             </h2>
             <div className="flex space-x-2">
               {['moodle', 'gemini', 'system', 'auth'].map(cat => (
@@ -55,10 +60,10 @@ export default function AdminLogs() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-slate-50/50 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black border-b border-slate-50">
-                  <th className="px-8 py-5">Timestamp</th>
-                  <th className="px-8 py-5">Categoría</th>
-                  <th className="px-8 py-5">Nivel</th>
-                  <th className="px-8 py-5">Mensaje</th>
+                  <th className="px-8 py-5">{t('admin.logs.table.timestamp')}</th>
+                  <th className="px-8 py-5">{t('admin.logs.table.module')}</th>
+                  <th className="px-8 py-5">{t('common.status')}</th>
+                  <th className="px-8 py-5">{t('admin.logs.table.details')}</th>
                 </tr>
               </thead>
               <tbody className="text-xs font-mono">
@@ -86,7 +91,7 @@ export default function AdminLogs() {
                 ))}
                 {logs.length === 0 && (
                    <tr>
-                     <td colSpan={4} className="px-6 py-12 text-center text-gray-500 italic">No hay registros disponibles en este momento.</td>
+                     <td colSpan={4} className="px-6 py-12 text-center text-gray-500 italic">No logs available at this time.</td>
                    </tr>
                 )}
               </tbody>

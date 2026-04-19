@@ -26,7 +26,10 @@ interface Props {
     onDismiss: () => void;
 }
 
+import { useTranslation } from '@/lib/LanguageContext';
+
 export default function InterventionCard({ intervention, onDismiss }: Props) {
+    const { t } = useTranslation();
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const gradient = TYPE_COLORS[intervention.type] ?? 'from-violet-500 to-violet-700';
     const emoji = TYPE_EMOJI[intervention.type] ?? '✨';
@@ -51,7 +54,7 @@ export default function InterventionCard({ intervention, onDismiss }: Props) {
 
         // Display feedback toast and dismiss
         if (buttonLabel.toLowerCase().includes('continue') && !buttonLabel.toLowerCase().includes('anyway')) {
-            const messages = ['Good progress — keep going.', 'Nice focus recovery.', 'You’re back on track.'];
+            const messages = [t('instructor.interventions.success1'), t('instructor.interventions.success2'), t('instructor.interventions.success3')];
             setToastMessage(messages[Math.floor(Math.random() * messages.length)]);
             setTimeout(() => {
                 onDismiss();
@@ -59,7 +62,7 @@ export default function InterventionCard({ intervention, onDismiss }: Props) {
         } else if (buttonLabel.toLowerCase().includes('anyway') || buttonLabel.toLowerCase().includes('dismiss')) {
             onDismiss();
         } else {
-            const messages = ['Action applied.', 'Taking note of your choice.', 'Good decision.'];
+            const messages = [t('instructor.interventions.success1'), t('instructor.interventions.success2'), t('instructor.interventions.success3')];
             setToastMessage(messages[Math.floor(Math.random() * messages.length)]);
             setTimeout(() => {
                 onDismiss();
@@ -99,7 +102,7 @@ export default function InterventionCard({ intervention, onDismiss }: Props) {
                     <span className="text-xl mt-0.5" aria-hidden="true">{emoji}</span>
                     <div className="flex-1 min-w-0">
                         <p className="text-white/80 text-[9px] font-semibold uppercase tracking-wider mb-0.5">
-                            Pedagogical Support
+                            {t('instructor.interventions.support')}
                         </p>
                         <h4 className="text-white font-bold text-xs leading-tight line-clamp-1">
                             {intervention.title}
@@ -147,7 +150,7 @@ export default function InterventionCard({ intervention, onDismiss }: Props) {
                     </div>
 
                     <p className="text-[9px] text-slate-400 text-center pt-1.5 border-t border-slate-50">
-                        Based on activity patterns
+                        {t('instructor.interventions.footer')}
                     </p>
                 </div>
             </div>

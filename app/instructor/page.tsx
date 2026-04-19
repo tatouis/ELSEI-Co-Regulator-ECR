@@ -65,7 +65,10 @@ function HeatCell({ level, name }: { level: StateLevel; name: string }) {
 import { useRouter } from 'next/navigation';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+import { useTranslation } from '@/lib/LanguageContext';
+
 export default function InstructorDashboard() {
+    const { t } = useTranslation();
     const { learners, courseFilter, setCourseFilter } = useSim();
     const router = useRouter();
     const timeline = generateTimeline();
@@ -84,9 +87,16 @@ export default function InstructorDashboard() {
     const totalInterventions = filteredLearners.reduce((s, l) => s + l.interventionCount, 0);
 
     const motivationDist = [
-        { name: 'High', value: filteredLearners.filter((l) => l.state.motivation === 'high').length, color: '#10b981' },
-        { name: 'Medium', value: filteredLearners.filter((l) => l.state.motivation === 'medium').length, color: '#f59e0b' },
-        { name: 'Low Risk', value: filteredLearners.filter((l) => l.state.motivation === 'low').length, color: '#ef4444' },
+        { name: t('common.high'), value: filteredLearners.filter((l) => l.state.motivation === 'high').length, color: '#10b981' },
+        { name: t('common.medium'), value: filteredLearners.filter((l) => l.state.motivation === 'medium').length, color: '#f59e0b' },
+        { name: t('common.low'), value: filteredLearners.filter((l) => l.state.motivation === 'low').length, color: '#ef4444' },
+    ];
+
+    const MOODLE_INSIGHTS_LOCAL = [
+        { title: 'Avg. Navigation Speed', value: '4.2 pages/min', trend: '+12%', status: 'high' },
+        { title: 'Quiz Retry Rate', value: '2.8 attempts', trend: '-5%', status: 'medium' },
+        { title: 'Active Forum Threads', value: '14 topics', trend: '+2', status: 'optimal' },
+        { title: 'Avg. Course Dwell Time', value: '42m 15s', trend: '+18%', status: 'optimal' },
     ];
 
     return (
@@ -103,8 +113,8 @@ export default function InstructorDashboard() {
                             <Users className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-white">Instructor Analytics</h1>
-                            <p className="text-white/70 text-sm">Master ELSEI — Class Cognitive Regulation Overview</p>
+                            <h1 className="text-2xl font-bold text-white">{t('instructor.title')}</h1>
+                            <p className="text-white/70 text-sm">Master ELSEI — {t('instructor.subtitle')}</p>
                         </div>
                         <div className="sm:ml-auto flex items-center gap-4">
                             <div className="flex gap-2">
@@ -123,7 +133,7 @@ export default function InstructorDashboard() {
                                         onChange={(e) => setCourseFilter(e.target.value || null)}
                                         className="bg-white/10 text-white text-xs px-2 py-1.5 border border-white/20 rounded-xl outline-none backdrop-blur-sm cursor-pointer"
                                     >
-                                        <option value="" className="text-slate-800">Global Overview</option>
+                                        <option value="" className="text-slate-800">{t('instructor.globalOverview')}</option>
                                         {availableCourses.map(id => (
                                             <option key={id as string} value={id as string} className="text-slate-800">
                                                 {getCourseName(id as string)}
@@ -133,7 +143,7 @@ export default function InstructorDashboard() {
                                 )}
                             </div>
                             <div className="text-right border-l border-white/20 pl-4 hidden sm:block">
-                                <p className="text-white/50 text-[10px] uppercase tracking-wider font-bold">Learners</p>
+                                <p className="text-white/50 text-[10px] uppercase tracking-wider font-bold">{t('instructor.learners')}</p>
                                 <p className="text-white text-3xl font-bold leading-none mt-1">{filteredLearners.length}</p>
                             </div>
                         </div>
@@ -146,10 +156,10 @@ export default function InstructorDashboard() {
                 {/* KPI Row */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {[
-                        { icon: Brain, label: 'High Cognitive Load', value: highCL, total: filteredLearners.length, color: 'text-red-600', bg: 'bg-red-50' },
-                        { icon: Eye, label: 'Low Attention', value: lowAtt, total: filteredLearners.length, color: 'text-amber-600', bg: 'bg-amber-50' },
-                        { icon: Zap, label: 'Low Motivation', value: lowMot, total: filteredLearners.length, color: 'text-orange-600', bg: 'bg-orange-50' },
-                        { icon: TrendingUp, label: 'Interventions Today', value: totalInterventions, total: null, color: 'text-violet-600', bg: 'bg-violet-50' },
+                        { icon: Brain, label: t('instructor.kpis.highLoad'), value: highCL, total: filteredLearners.length, color: 'text-red-600', bg: 'bg-red-50' },
+                        { icon: Eye, label: t('instructor.kpis.lowAtt'), value: lowAtt, total: filteredLearners.length, color: 'text-amber-600', bg: 'bg-amber-50' },
+                        { icon: Zap, label: t('instructor.kpis.lowMot'), value: lowMot, total: filteredLearners.length, color: 'text-orange-600', bg: 'bg-orange-50' },
+                        { icon: TrendingUp, label: t('instructor.kpis.interventions'), value: totalInterventions, total: null, color: 'text-violet-600', bg: 'bg-violet-50' },
                     ].map(({ icon: Icon, label, value, total, color, bg }) => (
                         <motion.div
                             key={label}
@@ -174,8 +184,8 @@ export default function InstructorDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                     {/* Attention Timeline */}
                     <div className="lg:col-span-2 glass rounded-3xl p-5">
-                        <h3 className="font-semibold text-slate-800 mb-1">Attention & Motivation Timeline</h3>
-                        <p className="text-xs text-slate-500 mb-4">Class-average over current session</p>
+                        <h3 className="font-semibold text-slate-800 mb-1">{t('instructor.charts.timeline')}</h3>
+                        <p className="text-xs text-slate-500 mb-4">{t('instructor.charts.timelineDesc')}</p>
                         <ResponsiveContainer width="100%" height={180}>
                             <AreaChart data={timeline} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                                 <defs>
@@ -194,16 +204,16 @@ export default function InstructorDashboard() {
                                 <Tooltip
                                     contentStyle={{ borderRadius: 12, border: 'none', background: 'rgba(255,255,255,0.95)', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', fontSize: 12 }}
                                 />
-                                <Area type="monotone" dataKey="attention" stroke="#7c3aed" fill="url(#attGrad)" strokeWidth={2} name="Attention %" />
-                                <Area type="monotone" dataKey="motivation" stroke="#06b6d4" fill="url(#motGrad)" strokeWidth={2} name="Motivation %" />
+                                <Area type="monotone" dataKey="attention" stroke="#7c3aed" fill="url(#attGrad)" strokeWidth={2} name={`${t('instructor.kpis.lowAtt')} %`} />
+                                <Area type="monotone" dataKey="motivation" stroke="#06b6d4" fill="url(#motGrad)" strokeWidth={2} name={`${t('instructor.kpis.lowMot')} %`} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
 
                     {/* Motivation Distribution */}
                     <div className="glass rounded-3xl p-5">
-                        <h3 className="font-semibold text-slate-800 mb-1">Motivation Risk</h3>
-                        <p className="text-xs text-slate-500 mb-4">Current class distribution</p>
+                        <h3 className="font-semibold text-slate-800 mb-1">{t('instructor.charts.risk')}</h3>
+                        <p className="text-xs text-slate-500 mb-4">{t('instructor.charts.riskDesc')}</p>
                         <div className="flex items-center justify-center">
                             <PieChart width={160} height={160}>
                                 <Pie data={motivationDist} cx={75} cy={75} innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
@@ -221,7 +231,7 @@ export default function InstructorDashboard() {
                                         <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
                                         <span className="text-xs text-slate-600">{name}</span>
                                     </div>
-                                    <span className="text-xs font-bold text-slate-700">{value} learners</span>
+                                    <span className="text-xs font-bold text-slate-700">{value} {t('instructor.learners').toLowerCase()}</span>
                                 </div>
                             ))}
                         </div>
@@ -235,7 +245,7 @@ export default function InstructorDashboard() {
                     <div className="glass rounded-3xl p-5">
                         <div className="flex items-center gap-2 mb-4">
                             <AlertTriangle className="w-4 h-4 text-amber-500" />
-                            <h3 className="font-semibold text-slate-800">Moodle Module Bottlenecks</h3>
+                            <h3 className="font-semibold text-slate-800">{t('instructor.charts.bottlenecks')}</h3>
                         </div>
                         <div className="space-y-4">
                             {HOTSPOTS.map(({ activity, dropoff, struggle }) => (
@@ -243,13 +253,13 @@ export default function InstructorDashboard() {
                                     <div className="flex items-center justify-between mb-1">
                                         <p className="text-xs font-semibold text-slate-700 truncate pr-4">{activity}</p>
                                         <div className="text-right">
-                                            <span className="text-[10px] text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded-md">{struggle}% High Load</span>
+                                            <span className="text-[10px] text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded-md">{struggle}% {t('instructor.kpis.highLoad')}</span>
                                         </div>
                                     </div>
                                     <div className="flex bg-slate-100 h-2 rounded-full overflow-hidden">
                                         <motion.div className="bg-gradient-to-r from-amber-400 to-red-500" initial={{ width: 0 }} animate={{ width: `${struggle}%` }} transition={{ duration: 1 }} />
                                     </div>
-                                    <p className="text-[10px] text-slate-500 mt-1">Est. Drop-off Risk: {dropoff}%</p>
+                                    <p className="text-[10px] text-slate-500 mt-1">{t('instructor.charts.risk')}: {dropoff}%</p>
                                 </div>
                             ))}
                         </div>
@@ -259,10 +269,10 @@ export default function InstructorDashboard() {
                     <div className="glass rounded-3xl p-5">
                         <div className="flex items-center gap-2 mb-4">
                             <Zap className="w-4 h-4 text-amber-500" />
-                            <h3 className="font-semibold text-slate-800">Live Moodle Telemetry</h3>
+                            <h3 className="font-semibold text-slate-800">{t('instructor.charts.telemetry')}</h3>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                            {MOODLE_INSIGHTS.map((insight) => (
+                            {MOODLE_INSIGHTS_LOCAL.map((insight) => (
                                 <div key={insight.title} className="bg-white/50 border border-slate-100 rounded-2xl p-4">
                                     <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">{insight.title}</p>
                                     <div className="flex items-end justify-between">
@@ -270,7 +280,6 @@ export default function InstructorDashboard() {
                                         <span className={`text-[10px] font-bold ${insight.trend.startsWith('+') ? 'text-emerald-600' : 'text-red-600'
                                             }`}>{insight.trend}</span>
                                     </div>
-                                    <p className="text-[10px] italic text-slate-400 mt-2">v.s last week baseline</p>
                                 </div>
                             ))}
                         </div>
@@ -283,8 +292,8 @@ export default function InstructorDashboard() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                         <div className="flex items-center gap-2">
                             <BookOpen className="w-4 h-4 text-violet-600" />
-                            <h3 className="font-semibold text-slate-800">Class State Heatmap</h3>
-                            <span className="text-xs text-slate-500 hidden sm:inline-block">— Click a learner to drill down (privacy-aware)</span>
+                            <h3 className="font-semibold text-slate-800">{t('instructor.charts.heatmap')}</h3>
+                            <span className="text-xs text-slate-500 hidden sm:inline-block">— {t('instructor.charts.heatmapDesc')}</span>
                         </div>
                     </div>
 
@@ -293,7 +302,7 @@ export default function InstructorDashboard() {
                             <Brain className="w-4 h-4" />
                         </div>
                         <p>
-                            <span className="font-bold text-violet-800">AI Inference Engine:</span> The system detects <em>Cognitive Load</em>, <em>Attention</em>, and <em>Motivation</em> by tracking raw Moodle telemetry in real-time. This includes: <strong>Time since last action</strong>, <strong>Inactivity streaks</strong>, <strong>Navigation speed (pages/min)</strong>, <strong>Retry counts</strong>, and <strong>Error rates</strong> against normative baseline thresholds.
+                            <span className="font-bold text-violet-800">AI Inference Engine:</span> {t('instructor.charts.heatmapDesc')}
                         </p>
                     </div>
 
@@ -301,12 +310,12 @@ export default function InstructorDashboard() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-100">
-                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Learner</th>
-                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cog. Load</th>
-                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Attention</th>
-                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Motivation</th>
-                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Interventions</th>
-                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('instructor.learners')}</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('instructor.kpis.highLoad')}</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('instructor.kpis.lowAtt')}</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('instructor.kpis.lowMot')}</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">{t('instructor.kpis.interventions')}</th>
+                                    <th className="pb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">{t('common.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
@@ -343,7 +352,7 @@ export default function InstructorDashboard() {
                                                 onClick={(e) => { e.stopPropagation(); router.push(`/instructor/students/${learner.id}`); }}
                                                 className="text-[10px] uppercase tracking-wide font-bold text-violet-600 bg-white border border-violet-200 hover:bg-violet-50 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
                                             >
-                                                Analyze
+                                                {t('common.details')}
                                             </button>
                                         </td>
                                     </tr>

@@ -7,7 +7,10 @@ import { Settings, Server, Brain, Save, ArrowLeft, RefreshCw, Key, ShieldCheck, 
 import { useRouter } from 'next/navigation';
 import { useSim } from '@/lib/simulationStore';
 
+import { useTranslation } from '@/lib/LanguageContext';
+
 export default function InstructorSettings() {
+    const { t } = useTranslation();
     const router = useRouter();
     const [geminiKey, setGeminiKey] = useState('');
     const [moodleUrl, setMoodleUrl] = useState('');
@@ -43,12 +46,12 @@ export default function InstructorSettings() {
             const res = await fetch(`/api/moodle/test?${queryParams.toString()}`);
             const data = await res.json();
             if (data.success && data.siteInfo) {
-                setMoodleTestResult({status: 'success', msg: `Connected to: ${data.siteInfo.sitename}`});
+                setMoodleTestResult({status: 'success', msg: `${t('admin.settings.connected')}: ${data.siteInfo.sitename}`});
             } else {
-                setMoodleTestResult({status: 'error', msg: data.error || 'Connection failed.'});
+                setMoodleTestResult({status: 'error', msg: data.error || t('common.error')});
             }
         } catch (error: any) {
-            setMoodleTestResult({status: 'error', msg: 'Network error while testing connection.'});
+            setMoodleTestResult({status: 'error', msg: t('common.error')});
         }
     };
 
@@ -79,11 +82,11 @@ export default function InstructorSettings() {
                 setSaved(true);
                 setTimeout(() => setSaved(false), 3000);
             } else {
-                alert(data.message || 'Failed to save settings');
+                alert(data.message || t('common.error'));
             }
         } catch (error) {
             console.error('Save error:', error);
-            alert('Network error while saving settings');
+            alert(t('common.error'));
         } finally {
             setLoading(false);
         }
@@ -106,13 +109,13 @@ export default function InstructorSettings() {
                                 onClick={() => router.push('/instructor')}
                                 className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-violet-600 transition-colors uppercase tracking-widest mb-2"
                             >
-                                <ArrowLeft className="w-3 h-3" /> Dashboard
+                                <ArrowLeft className="w-3 h-3" /> {t('admin.settings.backToConsole')}
                             </button>
                             <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-3">
                                 <Settings className="w-8 h-8 text-violet-600" />
-                                System Configuration
+                                {t('admin.settings.title')}
                             </h1>
-                            <p className="text-slate-500 mt-1 font-medium italic">Manage data sources, API keys, and platform behavior.</p>
+                            <p className="text-slate-500 mt-1 font-medium italic">{t('admin.settings.description')}</p>
                         </div>
 
                         <div className="bg-emerald-100 flex items-center gap-2 px-4 py-2 rounded-2xl border border-emerald-200">
@@ -143,7 +146,7 @@ export default function InstructorSettings() {
                                     </div>
                                     {item.soon && (
                                         <span className="text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-md bg-slate-200 text-slate-500">
-                                            Soon
+                                            {t('common.soon')}
                                         </span>
                                     )}
                                 </button>
@@ -161,14 +164,14 @@ export default function InstructorSettings() {
                                             <RefreshCw className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-slate-800">Moodle Integration</h3>
+                                            <h3 className="font-bold text-slate-800">{t('admin.settings.moodle.title')}</h3>
                                             <p className="text-[10px] text-slate-400 font-bold uppercase">Learning Management System</p>
                                         </div>
                                     </div>
 
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-slate-700 ml-1">Platform URL</label>
+                                            <label className="text-xs font-bold text-slate-700 ml-1">{t('admin.settings.moodleUrl')}</label>
                                             <div className="relative group">
                                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                                     <Database className="h-4 w-4 text-slate-400" />
@@ -184,7 +187,7 @@ export default function InstructorSettings() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-slate-700 ml-1">REST API Token</label>
+                                            <label className="text-xs font-bold text-slate-700 ml-1">{t('admin.settings.moodleToken')}</label>
                                             <div className="relative group">
                                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                                     <Key className="h-4 w-4 text-slate-400" />
@@ -204,9 +207,6 @@ export default function InstructorSettings() {
                                                     {showMoodleToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                                 </button>
                                             </div>
-                                            <p className="text-[10px] text-slate-400 italic px-1">
-                                                {moodleToken ? 'Local override active.' : envConfig?.moodleConfigured ? `System default detected: ${envConfig.moodleTokenMasked}` : 'Leave blank to use Simulated Mode (Master ELSEI Catalog).'}
-                                            </p>
                                         </div>
 
                                         {/* Test Connection Button & Result */}
@@ -217,7 +217,7 @@ export default function InstructorSettings() {
                                                 className="self-start flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
                                             >
                                                 {moodleTestResult.status === 'testing' ? <RefreshCw className="w-3 h-3 animate-spin"/> : <Database className="w-3 h-3" />}
-                                                Test Connection
+                                                {t('admin.settings.test')}
                                             </button>
                                             
                                             {moodleTestResult.status === 'success' && (
@@ -243,14 +243,14 @@ export default function InstructorSettings() {
                                             <Brain className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-slate-800">Google Gemini AI</h3>
+                                            <h3 className="font-bold text-slate-800">{t('admin.settings.gemini')}</h3>
                                             <p className="text-[10px] text-slate-400 font-bold uppercase">Intervention Language Model</p>
                                         </div>
                                     </div>
 
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <label className="text-xs font-bold text-slate-700 ml-1">Gemini API Key</label>
+                                            <label className="text-xs font-bold text-slate-700 ml-1">{t('admin.settings.geminiKey')}</label>
                                             <div className="relative group">
                                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                                     <Key className="h-4 w-4 text-slate-400" />
@@ -270,9 +270,6 @@ export default function InstructorSettings() {
                                                     {showGeminiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                                 </button>
                                             </div>
-                                            <p className="text-[10px] text-slate-400 italic px-1">
-                                                {geminiKey ? 'Local override active.' : envConfig?.geminiConfigured ? `System default detected: ${envConfig.geminiKeyMasked}` : 'Requires a Gemini API Key.'}
-                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -291,7 +288,7 @@ export default function InstructorSettings() {
                                         ) : (
                                             <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                         )}
-                                        {loading ? 'Saving Settings...' : saved ? 'Successfully Saved!' : 'Apply Configuration'}
+                                        {loading ? t('common.loading') : saved ? t('admin.settings.saved') : t('admin.settings.save')}
                                     </button>
                                 </div>
                             </section>
@@ -304,7 +301,7 @@ export default function InstructorSettings() {
                                     className="bg-emerald-50 border border-emerald-100 text-emerald-700 p-4 rounded-2xl text-xs font-bold flex items-center justify-center gap-3"
                                 >
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                                    The ECR system is now synchronized with your new settings.
+                                    {t('admin.settings.saved')}
                                 </motion.div>
                             )}
                         </div>

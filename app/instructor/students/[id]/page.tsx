@@ -12,7 +12,10 @@ import { GraduationCap, ArrowLeft, Download, MessageSquare, History, Activity, S
 import { useState } from 'react';
 import { downloadStudentPDF } from '@/lib/exportHelpers';
 
+import { useTranslation } from '@/lib/LanguageContext';
+
 export default function StudentDetailAnalysis() {
+    const { t } = useTranslation();
     const { id } = useParams();
     const router = useRouter();
     const { learners } = useSim();
@@ -39,11 +42,11 @@ export default function StudentDetailAnalysis() {
                         className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-violet-600 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        Back to Instructor Dashboard
+                        {t('admin.settings.backToConsole')}
                     </button>
                     <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                            <ShieldCheck className="w-3 h-3" /> Privacy Protected
+                            <ShieldCheck className="w-3 h-3" /> {t('admin.prompts.active')} - Privacy
                         </span>
                         <button
                             onClick={() => downloadStudentPDF(learner, notes)}
@@ -82,7 +85,7 @@ export default function StudentDetailAnalysis() {
                         </div>
                         <div className="sm:ml-auto grid grid-cols-2 gap-4">
                             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-center min-w-[120px]">
-                                <p className="text-[10px] text-white/60 font-bold uppercase">Interventions</p>
+                                <p className="text-[10px] text-white/60 font-bold uppercase">{t('instructor.kpis.interventions')}</p>
                                 <p className="text-2xl font-bold text-white">{learner.interventionCount}</p>
                             </div>
                             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-center min-w-[120px]">
@@ -103,7 +106,7 @@ export default function StudentDetailAnalysis() {
                         <div>
                             <div className="flex items-center gap-2 mb-4">
                                 <Activity className="w-5 h-5 text-violet-600" />
-                                <h2 className="text-lg font-bold text-slate-800">Live Cognitive State</h2>
+                                <h2 className="text-lg font-bold text-slate-800">{t('instructor.charts.heatmap')}</h2>
                             </div>
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
@@ -126,7 +129,7 @@ export default function StudentDetailAnalysis() {
                         <div>
                             <div className="flex items-center gap-2 mb-4">
                                 <History className="w-5 h-5 text-violet-600" />
-                                <h2 className="text-lg font-bold text-slate-800">Data Transparency (Instructor View)</h2>
+                                <h2 className="text-lg font-bold text-slate-800">{t('instructor.charts.telemetry')}</h2>
                             </div>
                             <TransparencyPanel />
                         </div>
@@ -148,17 +151,12 @@ export default function StudentDetailAnalysis() {
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 className="w-full bg-white/50 border border-slate-200 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-violet-400 focus:border-transparent outline-none transition-all h-64 resize-none placeholder:text-slate-300"
-                                placeholder="Example: Student showed high frustration during Python Unit 3. Suggesting more fundamental reviews."
+                                placeholder="..."
                             />
-                            <div className="mt-4 pt-4 border-t border-slate-100">
-                                <p className="text-[10px] text-slate-400 italic">
-                                    * Local storage only. Not linked to Moodle database in Phase 1.
-                                </p>
-                            </div>
                         </section>
 
                         <section className="glass rounded-[32px] p-6 border border-white shadow-xl shadow-slate-200/50 bg-gradient-to-br from-white/80 to-indigo-50/30">
-                            <h3 className="font-bold text-slate-800 mb-4">Suggested Actions</h3>
+                            <h3 className="font-bold text-slate-800 mb-4">{t('common.actions')}</h3>
                             <div className="space-y-3">
                                 {[
                                     { label: 'Review Retries History', icon: History, color: 'text-blue-600', bg: 'bg-blue-50' },

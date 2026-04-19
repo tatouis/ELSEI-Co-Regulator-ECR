@@ -29,7 +29,24 @@ const VARIABLES: Variable[] = [
     { name: 'errorRatePct', description: 'Porcentaje de error detectado', example: '75' },
 ];
 
+import { useTranslation } from '@/lib/LanguageContext';
+
 export default function PromptManagement() {
+    const { t } = useTranslation();
+    const VARIABLES: Variable[] = [
+        { name: 'interventionType', description: 'Selected strategy (e.g., reflective_prompt)', example: 'reflective_prompt' },
+        { name: 'studentName', description: 'Full name of the learner', example: 'John Doe' },
+        { name: 'moduleCode', description: 'Current module code', example: 'M112' },
+        { name: 'moduleTitle', description: 'Descriptive title of the course', example: 'Advanced Life Support' },
+        { name: 'activityType', description: 'Resource type (quiz, reading, video)', example: 'quiz' },
+        { name: 'CL', description: 'Cognitive Load (low, medium, high)', example: 'high' },
+        { name: 'ATT', description: 'Attention Level (low, medium, high)', example: 'low' },
+        { name: 'MOT', description: 'Motivation Level (low, medium, high)', example: 'medium' },
+        { name: 'confidence', description: 'Estimated confidence (0.0 to 1.0)', example: '0.45' },
+        { name: 'retries', description: 'Number of retries in the activity', example: '3' },
+        { name: 'errorRatePct', description: 'Detected error percentage', example: '75' },
+    ];
+
     const [prompts, setPrompts] = useState<Record<string, string>>({
         intervene_system_instruction: '',
         intervene_developer_prompt: ''
@@ -68,12 +85,12 @@ export default function PromptManagement() {
                 body: JSON.stringify({ key, value: prompts[key] })
             });
             if (res.ok) {
-                setStatus({ type: 'success', msg: `${key.replace('intervene_', '').replace(/_/g, ' ')} guardado.` });
+                setStatus({ type: 'success', msg: `${key.replace('intervene_', '').replace(/_/g, ' ')} saved.` });
             } else {
-                setStatus({ type: 'error', msg: 'Error de API.' });
+                setStatus({ type: 'error', msg: 'API Error.' });
             }
         } catch (err) {
-            setStatus({ type: 'error', msg: 'Error de red.' });
+            setStatus({ type: 'error', msg: 'Network Error.' });
         } finally {
             setSaving(false);
             setTimeout(() => setStatus(null), 3000);
@@ -95,7 +112,6 @@ export default function PromptManagement() {
         
         setPrompts({ ...prompts, [field]: newText });
         
-        // Return focus and move cursor after insertion
         setTimeout(() => {
             if (ref.current) {
                 ref.current.focus();
@@ -106,7 +122,7 @@ export default function PromptManagement() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center text-indigo-600">
+            <div className="min-h-screen flex items-center justify-center text-indigo-600 bg-white">
                 <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
             </div>
         );
@@ -125,10 +141,10 @@ export default function PromptManagement() {
                             <span className="text-[10px] font-black uppercase tracking-[0.2em]">IA Engine Orchestrator</span>
                         </div>
                         <h1 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-indigo-600">
-                            Gestin de Comportamiento (Prompts)
+                            {t('admin.prompts.title')}
                         </h1>
                         <p className="text-slate-500 mt-2 font-light max-w-2xl">
-                            Ajusta las instrucciones maestras de Gemini. Elige cómo el sistema debe razonar, qué tono usar y cómo debe interpretar las variables del alumno en tiempo real.
+                            {t('admin.prompts.description')}
                         </p>
                     </div>
 
@@ -160,7 +176,7 @@ export default function PromptManagement() {
                                     </div>
                                     <div>
                                         <h3 className="font-black text-slate-800 text-lg">System Instruction</h3>
-                                        <p className="text-[10px] text-indigo-500 uppercase tracking-[0.2em] font-black">Identidad Global del Agente</p>
+                                        <p className="text-[10px] text-indigo-500 uppercase tracking-[0.2em] font-black">Global Agent Identity</p>
                                     </div>
                                 </div>
                                 <button 
@@ -169,7 +185,7 @@ export default function PromptManagement() {
                                     className="px-8 py-4 bg-slate-900 text-white hover:bg-indigo-600 disabled:bg-slate-200 disabled:text-slate-400 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-slate-200"
                                 >
                                     <Save className="w-4 h-4" />
-                                    {saving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}
+                                    {saving ? 'SAVING...' : 'SAVE CHANGES'}
                                 </button>
                             </div>
 
@@ -179,12 +195,12 @@ export default function PromptManagement() {
                                 onFocus={() => setActiveField('system')}
                                 onChange={(e) => setPrompts({ ...prompts, intervene_system_instruction: e.target.value })}
                                 className="w-full h-[350px] bg-slate-50 text-indigo-900 p-8 rounded-3xl font-mono text-sm leading-relaxed focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/30 focus:bg-white outline-none border border-slate-100 resize-none transition-all shadow-inner placeholder:text-slate-300"
-                                placeholder="Define el rol de la IA..."
+                                placeholder="Define AI role..."
                             />
                             
                             <div className="mt-4 flex items-center gap-2 text-slate-500 text-[10px]">
                                 <Info className="w-3 h-3" />
-                                <span>Aquí defines el **quién es** el agente. No uses variables dinámicas aquí.</span>
+                                <span>Define **who** the agent is here. Do not use dynamic variables in this field.</span>
                             </div>
                         </div>
 
@@ -197,7 +213,7 @@ export default function PromptManagement() {
                                     </div>
                                     <div>
                                         <h3 className="font-black text-slate-800 text-lg">Developer / User Prompt</h3>
-                                        <p className="text-[10px] text-violet-500 uppercase tracking-[0.2em] font-black">Contexto Dinmico e Inyeccin de Datos</p>
+                                        <p className="text-[10px] text-violet-500 uppercase tracking-[0.2em] font-black">Dynamic Context & Data Injection</p>
                                     </div>
                                 </div>
                                 <button 
@@ -206,7 +222,7 @@ export default function PromptManagement() {
                                     className="px-8 py-4 bg-slate-900 text-white hover:bg-violet-600 disabled:bg-slate-200 disabled:text-slate-400 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shadow-xl shadow-slate-200"
                                 >
                                     <Save className="w-4 h-4" />
-                                    {saving ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}
+                                    {saving ? 'SAVING...' : 'SAVE CHANGES'}
                                 </button>
                             </div>
 
@@ -216,12 +232,12 @@ export default function PromptManagement() {
                                 onFocus={() => setActiveField('developer')}
                                 onChange={(e) => setPrompts({ ...prompts, intervene_developer_prompt: e.target.value })}
                                 className="w-full h-[450px] bg-slate-50 text-violet-900 p-8 rounded-3xl font-mono text-sm leading-relaxed focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500/30 focus:bg-white outline-none border border-slate-100 resize-none transition-all shadow-inner placeholder:text-slate-300"
-                                placeholder="Define cmo la IA usa los datos..."
+                                placeholder="Define how AI uses data..."
                             />
 
                             <div className="mt-4 flex items-center gap-2 text-slate-500 text-[10px]">
                                 <FileCode className="w-3 h-3 text-violet-400" />
-                                <span>Usa las variables de la derecha con doble llave: `{"{{variable}}"}`.</span>
+                                <span>Use variables from the right with double braces: `{"{{variable}}"}`.</span>
                             </div>
                         </div>
                     </div>
@@ -238,7 +254,7 @@ export default function PromptManagement() {
                             </div>
 
                             <p className="text-xs text-slate-500 mb-8 font-medium leading-relaxed">
-                                Haz clic en una variable para insertarla en la posicin del cursor del editor activo.
+                                Click on a variable to insert it at the current cursor position in the active editor.
                             </p>
 
                             <div className="space-y-4">
@@ -254,7 +270,7 @@ export default function PromptManagement() {
                                         </div>
                                         <p className="text-[10px] text-slate-500 font-medium">{v.description}</p>
                                         <div className="mt-2 text-[9px] font-mono text-slate-400 truncate italic">
-                                            Ejemplo: {v.example}
+                                            Example: {v.example}
                                         </div>
                                     </div>
                                 ))}
@@ -263,19 +279,19 @@ export default function PromptManagement() {
                              {/* Help Section */}
                              <div className="mt-8 pt-8 border-t border-slate-100">
                                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-600 mb-6 flex items-center gap-2">
-                                     <HelpCircle className="w-4 h-4" /> Gua de Estructura
+                                     <HelpCircle className="w-4 h-4" /> Structure Guide
                                  </h3>
                                  <div className="space-y-5">
                                      <div className="flex gap-4">
                                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
                                          <p className="text-[10px] text-slate-500 leading-relaxed font-medium">
-                                             <strong className="text-slate-700">System:</strong> Define la personalidad. Ej: "Eres un mentor socrtico que nunca da la respuesta".
+                                             <strong className="text-slate-700">System:</strong> Defines personality. E.g., "You are a Socratic mentor who never gives direct answers".
                                          </p>
                                      </div>
                                      <div className="flex gap-4">
                                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
                                          <p className="text-[10px] text-slate-500 leading-relaxed font-medium">
-                                             <strong className="text-slate-700">Developer:</strong> Define los datos. Ej: "El alumno tiene carga `{"{{CL}}"}`. Genera un consejo".
+                                             <strong className="text-slate-700">Developer:</strong> Defines data usage. E.g., "The student has load `{"{{CL}}"}`. Generate advice".
                                          </p>
                                      </div>
                                  </div>

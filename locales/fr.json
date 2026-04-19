@@ -1,0 +1,176 @@
+{
+  "nav": {
+    "dashboard": "Tableau de Bord",
+    "governance": "Gouvernance",
+    "settings": "Paramètres",
+    "logs": "Journaux",
+    "prompts": "Prompts",
+    "logout": "Déconnexion",
+    "login": "Connexion",
+    "portal": "Accès Portail"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "back": "Retour",
+    "search": "Rechercher",
+    "actions": "Actions",
+    "status": "Statut",
+    "date": "Date",
+    "user": "Utilisateur",
+    "course": "Cours",
+    "details": "Détails",
+    "soon": "Bientôt"
+  },
+  "admin": {
+    "title": "Gouvernance Administrative",
+    "welcome": "Console de Contrôle",
+    "description": "Surveillez l'intégrité du système, la synchronisation Moodle et les politiques d'intervention de l'IA.",
+    "stats": {
+      "activeUsers": "Utilisateurs Actifs",
+      "totalInterventions": "Total Interventions",
+      "moodleStatus": "Statut Moodle",
+      "systemHealth": "Santé Système"
+    },
+    "governance": {
+        "title": "Gouvernance des Données & Transparence",
+        "moodleExplorer": "Explorateur de Données Moodle",
+        "dictionary": "Dictionnaire de Données (Moodle + ECR)",
+        "showDictionary": "Afficher le Dictionnaire",
+        "hideDictionary": "Masquer le Dictionnaire",
+        "syncStatus": "Statut de Sync Moodle",
+        "connected": "Connecté",
+        "fields": {
+            "fullName": "Nom Complet / Utilisateur",
+            "identityDesc": "Identité de l'étudiant synchronisée directement depuis le cœur de Moodle.",
+            "interactionTime": "Temps d'Interaction (Min)",
+            "interactionDesc": "Temps d'utilisation estimé basé sur les pulsations d'activité (1 pulse = 10 sec).",
+            "interventions": "Total Interventions",
+            "interventionsDesc": "Nombre total de suggestions Gemini générées pour cet utilisateur.",
+            "moodleId": "UID Moodle",
+            "moodleIdDesc": "Clé primaire unique de l'utilisateur dans la base de données externe Moodle.",
+            "gradeItems": "Notes et Évaluations",
+            "gradeItemsDesc": "Résultats des devoirs et examens obtenus via l'API Moodle."
+        },
+        "tabs": {
+            "students": "Étudiants",
+            "metadata": "Découverte de Métadonnées",
+            "audit": "Audit de Performance"
+        },
+        "studentTable": {
+            "name": "Étudiant",
+            "progress": "Progression",
+            "grades": "Notes",
+            "interventions": "Interventions",
+            "time": "Temps (Min)",
+            "lastSync": "Dernière Sync"
+        }
+    },
+    "settings": {
+        "title": "Configuration Globale",
+        "description": "Gérez les identifiants du système et l'intégration avec les services externes.",
+        "moodle": {
+            "title": "Intégration Moodle (LMS)",
+            "url": "URL du Site Moodle",
+            "urlPlaceholder": "https://votre-moodle.com",
+            "token": "Jeton de Service Web",
+            "tokenPlaceholder": "Saisir le jeton Moodle",
+            "test": "Tester la Connexion",
+            "success": "Connexion Réussie",
+            "error": "Échec de la Connexion",
+            "desc": "L'URL de base de votre installation Moodle.",
+            "tokenDesc": "Jeton obtenu dans 'Administration du site > Plugins > Services web > Jetons'."
+        },
+        "ai": {
+            "title": "Intelligence Artificielle (Gemini)",
+            "key": "Clé API Google Gemini",
+            "keyPlaceholder": "Saisir la clé API Gemini"
+        },
+        "saveConfig": "ENREGISTRER LA CONFIGURATION",
+        "configUpdated": "Configuration mise à jour avec succès.",
+        "serverError": "Erreur lors de la connexion au serveur.",
+        "backToConsole": "Retour à la Console",
+        "save": "Enregistrer les paramètres",
+        "saved": "Enregistré avec succès !",
+        "test": "Tester la connexion",
+        "connected": "Connecté à",
+        "moodleUrl": "URL de la plateforme",
+        "moodleToken": "Jeton API REST",
+        "gemini": "IA Google Gemini",
+        "geminiKey": "Clé API Gemini"
+    },
+    "logs": {
+        "title": "Journaux Système",
+        "description": "Audit en temps réel des actions utilisateurs, interventions IA et événements système.",
+        "table": {
+            "timestamp": "Horodatage",
+            "user": "Utilisateur",
+            "action": "Action",
+            "module": "Module",
+            "details": "Détails"
+        }
+    },
+    "prompts": {
+        "title": "Politiques d'Intervention IA",
+        "description": "Configurez les scénarios et les messages métacognitifs utilisés par le Co-Régulateur IA.",
+        "table": {
+            "type": "Type d'Intervention",
+            "condition": "Condition de Déclenchement",
+            "prompt": "Prompt de Base",
+            "active": "Actif"
+        }
+    }
+  },
+  "instructor": {
+    "title": "Analytique Instructeur",
+    "subtitle": "Aperçu de la régulation cognitive de la classe",
+    "learners": "Apprenants",
+    "globalOverview": "Vue d'ensemble globale",
+    "kpis": {
+        "highLoad": "Charge Cognitive Élevée",
+        "lowAtt": "Attention Faible",
+        "lowMot": "Motivation Faible",
+        "interventions": "Interventions Aujourd'hui"
+    },
+    "charts": {
+        "timeline": "Chronologie de l'Attention & Motivation",
+        "timelineDesc": "Moyenne de classe sur la session actuelle",
+        "risk": "Risque de Motivation",
+        "riskDesc": "Distribution actuelle de la classe",
+        "bottlenecks": "Goulots d'étranglement Moodle",
+        "telemetry": "Télémétrie Moodle en Direct",
+        "heatmap": "Carte Thermique de l'État de la Classe",
+        "heatmapDesc": "Cliquez sur un apprenant pour approfondir (respect de la vie privée)"
+    },
+    "interventions": {
+        "support": "Soutien pédagogique",
+        "footer": "Basé sur les modèles d'activité",
+        "success1": "Bonne progression - continuez.",
+        "success2": "Belle récupération de l'attention.",
+        "success3": "Vous êtes de retour sur la bonne voie."
+    }
+  },
+  "student": {
+    "activity": {
+        "title": "Activité Actuelle",
+        "quizStatus": "Quiz — Aucune interruption"
+    },
+    "performance": {
+        "summary": "Auto-régulation Hebdomadaire",
+        "weeklyAvg": "Résumé de vos schémas d'apprentissage cette semaine",
+        "time": "Temps de Session",
+        "retries": "Tentatives"
+    },
+    "transparency": {
+        "title": "Ce que le système voit",
+        "subtitle": "Tous les signaux utilisés pour estimer votre état",
+        "privacyNotice": "Aucune frappe de touche, donnée biométrique ou donnée de webcam n'est jamais collectée. Seuls les modèles d'interaction anonymisés sont utilisés."
+    }
+  }
+}

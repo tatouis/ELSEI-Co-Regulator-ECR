@@ -15,50 +15,59 @@ function generateWeeklySummary(profile: string) {
     return base;
 }
 
+import { useTranslation } from '@/lib/LanguageContext';
+
 export default function WeeklySummary() {
+    const { t } = useTranslation();
     const { currentLearner, interventionHistory } = useSim();
     const data = generateWeeklySummary(currentLearner.profile);
 
     const stats = [
         {
             icon: Brain,
-            label: 'Load Management',
+            label: t('instructor.kpis.highLoad').replace(t('common.high'), '').trim(),
             value: `${data.avgLoadManagement}%`,
-            desc: 'Avg cognitive load regulation',
+            desc: t('admin.governance.fields.interactionDesc').split('.')[0],
             color: 'text-violet-600',
             bg: 'bg-violet-50',
         },
         {
             icon: Clock,
-            label: 'Attention Quality',
+            label: t('instructor.kpis.lowAtt').replace(t('common.low'), '').trim(),
             value: `${data.avgAttention}%`,
-            desc: 'Sustained focus this week',
+            desc: t('instructor.charts.realTime'),
             color: 'text-blue-600',
             bg: 'bg-blue-50',
         },
         {
             icon: Target,
-            label: 'Completion Rate',
+            label: t('admin.governance.studentTable.progress'),
             value: `${data.completionRate}%`,
-            desc: 'Activities completed',
+            desc: t('admin.governance.studentTable.progress'),
             color: 'text-emerald-600',
             bg: 'bg-emerald-50',
         },
         {
             icon: TrendingUp,
-            label: 'Support Received',
+            label: t('instructor.kpis.interventions').split(' ')[0],
             value: String(interventionHistory.length + data.interventionsReceived),
-            desc: 'Metacognitive suggestions',
+            desc: t('instructor.interventions.support'),
             color: 'text-cyan-600',
             bg: 'bg-cyan-50',
         },
     ];
 
+    const dayKeys = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Today'];
+    const localizedDays = dayKeys.map(k => {
+        if (k === 'Today') return t('common.date').includes('Date') ? 'Today' : 'Aujourd\'hui';
+        return k; // Mock days for now, could be improved with a proper i18n day helper
+    });
+
     return (
         <div className="glass rounded-3xl p-5 space-y-4">
             <div>
-                <h3 className="font-semibold text-slate-800">Weekly Self-Regulation</h3>
-                <p className="text-xs text-slate-500">Summary of your learning patterns this week</p>
+                <h3 className="font-semibold text-slate-800">{t('student.performance.summary')}</h3>
+                <p className="text-xs text-slate-500">{t('student.performance.weeklyAvg')}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -80,7 +89,7 @@ export default function WeeklySummary() {
 
             {/* Weekly trend bar */}
             <div>
-                <p className="text-xs text-slate-500 mb-2">Attention trend (Mon – today)</p>
+                <p className="text-xs text-slate-500 mb-2">{t('instructor.charts.timeline')}</p>
                 <div className="flex items-end gap-1 h-10">
                     {[65, 58, 72, 61, 74, 69, data.avgAttention].map((v, i) => (
                         <motion.div
@@ -93,7 +102,7 @@ export default function WeeklySummary() {
                     ))}
                 </div>
                 <div className="flex justify-between text-[9px] text-slate-400 mt-1">
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Today'].map((d) => (
+                    {localizedDays.map((d) => (
                         <span key={d}>{d}</span>
                     ))}
                 </div>

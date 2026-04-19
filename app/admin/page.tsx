@@ -15,7 +15,10 @@ import Navbar from '@/components/Navbar';
 
 const COLORS = ['#10b981', '#f43f5e', '#6366f1'];
 
+import { useTranslation } from '@/lib/LanguageContext';
+
 export default function AdminDashboard() {
+    const { t } = useTranslation();
     const [stats, setStats] = useState<any>(null);
     const [analytics, setAnalytics] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -56,26 +59,26 @@ export default function AdminDashboard() {
                             <span className="text-[10px] font-black uppercase tracking-[0.2em]">System Overlord</span>
                         </div>
                         <h1 className="text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-indigo-600">
-                            Dashboard Administrativo
+                            {t('admin.title')}
                         </h1>
                         <p className="text-slate-500 font-medium text-sm max-w-xl">
-                            Monitorea el ecosistema de co-regulacin, analiza la efectividad de la IA y gestiona el flujo de datos.
+                            {t('admin.description')}
                         </p>
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-                        <AdminQuickLink href="/admin/prompts" icon={<Terminal className="w-6 h-6" />} label="IA Prompts" color="indigo" description="Configura directivas y comportamiento del LLM" />
-                        <AdminQuickLink href="/admin/governance" icon={<Database className="w-6 h-6" />} label="Gobernanza" color="blue" description="Ver resultados y Moodle Sync" />
-                        <AdminQuickLink href="/admin/logs" icon={<FileText className="w-6 h-6" />} label="System Logs" color="purple" description="Auditoría de eventos del sistema" />
+                        <AdminQuickLink href="/admin/prompts" icon={<Terminal className="w-6 h-6" />} label={t('nav.prompts')} color="indigo" description={t('admin.prompts.description')} />
+                        <AdminQuickLink href="/admin/governance" icon={<Database className="w-6 h-6" />} label={t('nav.governance')} color="blue" description={t('admin.governance.title')} />
+                        <AdminQuickLink href="/admin/logs" icon={<FileText className="w-6 h-6" />} label={t('nav.logs')} color="purple" description={t('admin.logs.description')} />
                     </div>
                 </header>
 
                 {/* Primary Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                    <StatCard title="Usuarios" value={stats?.summary.totalUsers} icon={<Users className="w-5 h-5 text-indigo-600" />} trend="+2 hoy" />
-                    <StatCard title="APIs Activas" value={`${stats?.summary.activeApis}/${stats?.summary.totalApis}`} icon={<Zap className="w-5 h-5 text-emerald-600" />} isSuccess />
-                    <StatCard title="Uso API (24h)" value={stats?.summary.usageCount24h} icon={<TrendingUp className="w-5 h-5 text-indigo-600" />} />
-                    <StatCard title="Salud Gemini" value={stats?.health.gemini === 'active' ? 'Optima' : 'Error'} icon={<Activity className="w-5 h-5 text-rose-600" />} isCritical={stats?.health.gemini !== 'active'} />
+                    <StatCard title={t('admin.stats.activeUsers')} value={stats?.summary.totalUsers} icon={<Users className="w-5 h-5 text-indigo-600" />} trend="+2 hoy" />
+                    <StatCard title="Active APIs" value={`${stats?.summary.activeApis}/${stats?.summary.totalApis}`} icon={<Zap className="w-5 h-5 text-emerald-600" />} isSuccess />
+                    <StatCard title="API Usage (24h)" value={stats?.summary.usageCount24h} icon={<TrendingUp className="w-5 h-5 text-indigo-600" />} />
+                    <StatCard title={t('admin.stats.systemHealth')} value={stats?.health.gemini === 'active' ? 'Optimal' : 'Error'} icon={<Activity className="w-5 h-5 text-rose-600" />} isCritical={stats?.health.gemini !== 'active'} />
                 </div>
 
                 {/* Analytics Row */}
@@ -85,13 +88,13 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between mb-8">
                             <div>
                                 <h3 className="text-xl font-black flex items-center gap-3 text-slate-800">
-                                    Tendencias de Estado <span className="text-[10px] bg-indigo-50 px-2 py-1 rounded-lg text-indigo-600 font-black tracking-widest uppercase">Real-time</span>
+                                    State Trends <span className="text-[10px] bg-indigo-50 px-2 py-1 rounded-lg text-indigo-600 font-black tracking-widest uppercase">Real-time</span>
                                 </h3>
-                                <p className="text-xs text-slate-400 font-medium">Tendencias de Carga Cognitiva y Atencin detectadas.</p>
+                                <p className="text-xs text-slate-400 font-medium">Cognitive Load & Attention Detection Trends.</p>
                             </div>
                             <div className="flex gap-4">
-                                <LegendItem color="#6366f1" label="Carga" />
-                                <LegendItem color="#10b981" label="Atención" />
+                                <LegendItem color="#6366f1" label="Load" />
+                                <LegendItem color="#10b981" label="Attention" />
                             </div>
                         </div>
                         
@@ -111,7 +114,7 @@ export default function AdminDashboard() {
                                     <CartesianGrid strokeDasharray="3 3" stroke="#00000005" vertical={false} />
                                     <XAxis dataKey="time" stroke="#00000030" fontSize={10} tickLine={false} axisLine={false} />
                                     <YAxis hide />
-                                    <Tooltip 
+                                    <ReTooltip 
                                         contentStyle={{ backgroundColor: '#fff', border: '1px solid #00000008', borderRadius: '20px', fontSize: '12px', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
                                         itemStyle={{ color: '#1e293b', fontWeight: 'bold' }}
                                     />
@@ -125,8 +128,8 @@ export default function AdminDashboard() {
                     {/* Intervention Success Rate */}
                     <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-2xl shadow-indigo-500/5 flex flex-col">
                         <div className="mb-6">
-                            <h3 className="text-xl font-black text-slate-800">Efectividad de IA</h3>
-                            <p className="text-xs text-slate-400 font-medium italic">Aceptadas vs. Ignoradas.</p>
+                            <h3 className="text-xl font-black text-slate-800">IA Effectiveness</h3>
+                            <p className="text-xs text-slate-400 font-medium italic">Accepted vs. Ignored.</p>
                         </div>
                         
                         <div className="flex-1 min-h-[220px]">
@@ -159,7 +162,7 @@ export default function AdminDashboard() {
                     {/* Activity Feed */}
                     <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-2xl shadow-indigo-500/5 transition-all hover:shadow-indigo-500/10">
                         <h3 className="text-xl font-black mb-8 flex items-center gap-3 text-slate-800">
-                            <Activity className="w-6 h-6 text-rose-600" /> Auditora de Actividad en Vivo
+                            <Activity className="w-6 h-6 text-rose-600" /> Live Activity Audit
                         </h3>
                         <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200">
                             {analytics?.liveEvents.map((event: any) => (
@@ -186,7 +189,7 @@ export default function AdminDashboard() {
                     {/* Engagement Leaderboard */}
                     <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-2xl shadow-emerald-500/5 transition-all hover:shadow-emerald-500/10">
                         <h3 className="text-xl font-black mb-8 flex items-center gap-3 text-slate-800">
-                            <TrendingUp className="w-6 h-6 text-emerald-600" /> Ranking de Compromiso
+                            <TrendingUp className="w-6 h-6 text-emerald-600" /> Engagement Ranking
                         </h3>
                         <div className="space-y-4">
                             {analytics?.leaderboard.map((student: any, idx: number) => (
@@ -196,11 +199,11 @@ export default function AdminDashboard() {
                                     </div>
                                     <div className="flex-1">
                                         <h4 className="text-sm font-black text-slate-800">{student.name}</h4>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">{student.interactions} Intervenciones IA</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">{student.interactions} IA Interventions</p>
                                     </div>
                                     <div className="text-right">
                                         <div className="text-sm font-black text-indigo-600">{student.timeMinutes}m</div>
-                                        <div className="text-[9px] text-slate-400 font-bold uppercase">Tiempo Total</div>
+                                        <div className="text-[9px] text-slate-400 font-bold uppercase">Total Time</div>
                                     </div>
                                 </div>
                             ))}
@@ -214,12 +217,12 @@ export default function AdminDashboard() {
                         <div>
                             <h2 className="text-2xl font-black flex items-center gap-4 text-slate-800">
                                 <Users className="w-6 h-6 text-indigo-600" /> 
-                                Gestin de Usuarios
+                                User Management
                             </h2>
-                            <p className="text-xs text-slate-400 font-medium italic mt-1">Identidades registradas en el sistema ECR.</p>
+                            <p className="text-xs text-slate-400 font-medium italic mt-1">Identities registered in the ECR system.</p>
                         </div>
                         <button className="px-6 py-3 bg-indigo-50 text-indigo-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-2">
-                            Ver todos <ChevronRight className="w-4 h-4" />
+                            View all <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>
                     
@@ -227,9 +230,9 @@ export default function AdminDashboard() {
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
                                 <tr>
-                                    <th className="px-8 py-5">Identidad</th>
-                                    <th className="px-8 py-5 text-center">Rol</th>
-                                    <th className="px-8 py-5 text-right">Integracin</th>
+                                    <th className="px-8 py-5">Identity</th>
+                                    <th className="px-8 py-5 text-center">Role</th>
+                                    <th className="px-8 py-5 text-right">Integration</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
