@@ -23,9 +23,11 @@ export default function LoginPage() {
         try {
             const success = await login(username, password);
             if (success) {
-                // Determine redirect based on role
-                // For now, let's assume if it's instructor01, it's instructor
-                if (username.toLowerCase().includes('instructor')) {
+                // Determine redirect based on username until user role is fully returned from login
+                const userLower = username.toLowerCase();
+                if (userLower.includes('admin')) {
+                    router.push('/admin');
+                } else if (userLower.includes('instructor')) {
                     router.push('/instructor');
                 } else {
                     router.push('/student');

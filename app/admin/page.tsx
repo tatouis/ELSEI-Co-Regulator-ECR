@@ -63,10 +63,10 @@ export default function AdminDashboard() {
                         </p>
                     </div>
                     
-                    <div className="flex flex-wrap gap-3">
-                        <AdminQuickLink href="/admin/prompts" icon={<Terminal className="w-4 h-4" />} label="IA Prompts" color="indigo" />
-                        <AdminQuickLink href="/admin/governance" icon={<Database className="w-4 h-4" />} label="Gobernanza" color="blue" />
-                        <AdminQuickLink href="/admin/logs" icon={<FileText className="w-4 h-4" />} label="System Logs" color="purple" />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+                        <AdminQuickLink href="/admin/prompts" icon={<Terminal className="w-6 h-6" />} label="IA Prompts" color="indigo" description="Configura directivas y comportamiento del LLM" />
+                        <AdminQuickLink href="/admin/governance" icon={<Database className="w-6 h-6" />} label="Gobernanza" color="blue" description="Ver resultados y Moodle Sync" />
+                        <AdminQuickLink href="/admin/logs" icon={<FileText className="w-6 h-6" />} label="System Logs" color="purple" description="Auditoría de eventos del sistema" />
                     </div>
                 </header>
 
@@ -244,17 +244,24 @@ function StatCard({ title, value, icon, trend, isSuccess, isCritical }: any) {
     );
 }
 
-function AdminQuickLink({ href, icon, label, color }: any) {
+function AdminQuickLink({ href, icon, label, color, description }: any) {
     const colors: any = {
-        indigo: 'hover:bg-indigo-500/20 hover:border-indigo-500/40 text-indigo-400',
-        blue: 'hover:bg-blue-500/20 hover:border-blue-500/40 text-blue-400',
-        purple: 'hover:bg-purple-500/20 hover:border-purple-500/40 text-purple-400',
+        indigo: 'from-indigo-600 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 shadow-indigo-500/20',
+        blue: 'from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 shadow-blue-500/20',
+        purple: 'from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 shadow-purple-500/20',
     };
     return (
-        <Link href={href} className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 transition-all text-sm font-bold ${colors[color] || ''} group`}>
-            {icon}
-            {label}
-            <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+        <Link href={href} className={`flex flex-col gap-2 p-5 rounded-2xl border border-white/20 bg-gradient-to-br ${colors[color] || ''} shadow-xl hover:-translate-y-1 transition-all group min-w-[200px]`}>
+            <div className="flex items-center justify-between">
+                <div className="bg-white/20 p-2 rounded-xl text-white">
+                    {icon}
+                </div>
+                <ChevronRight className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all" />
+            </div>
+            <div className="mt-2">
+                <h3 className="text-base font-bold text-white">{label}</h3>
+                <p className="text-[10px] text-white/70 mt-1 leading-tight">{description}</p>
+            </div>
         </Link>
     );
 }
