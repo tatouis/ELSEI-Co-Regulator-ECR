@@ -147,7 +147,7 @@ export default function AdminSettings() {
                             />
                             <Key className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
                         </div>
-                        <p className="text-[10px] text-slate-500 mt-1">Token obtenido en 'Administración del sitio > Plugins > Servicios web > Tokens'.</p>
+                        <p className="text-[10px] text-slate-500 mt-1">Token obtenido en 'Administración del sitio &gt; Plugins &gt; Servicios web &gt; Tokens'.</p>
                     </div>
 
                     <div className="pt-4 flex items-center gap-4">
