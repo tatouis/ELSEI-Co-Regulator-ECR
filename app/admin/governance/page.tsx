@@ -97,14 +97,6 @@ export default function GovernancePage() {
                             </div>
                             <p className="text-[10px] font-mono text-slate-400 mt-2">{data?.moodleUrl || 'Timeout / Unavailable'}</p>
                         </div>
-                        <button 
-                            onClick={() => setIsCognitiveLoadModalOpen(true)}
-                            className="group relative flex items-center gap-3 px-8 py-4 rounded-[2rem] bg-slate-900 text-white shadow-2xl hover:bg-slate-800 transition-all active:scale-95 overflow-hidden"
-                        >
-                            <Brain className="w-5 h-5 text-indigo-400" />
-                            <span className="text-xs font-black uppercase tracking-widest">{t('cognitiveLoad.title')}</span>
-                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </button>
                     </div>
                 </header>
 
@@ -170,32 +162,32 @@ export default function GovernancePage() {
 
                     {/* Main Content Area */}
                     <div className="lg:col-span-8 space-y-8">
-                        {/* Course Overview Card */}
-                        {currentCourse && (
-                            <div className="bg-indigo-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 blur-[100px] -mr-48 -mt-48 rounded-full" />
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white backdrop-blur-md">
-                                            <Activity className="w-4 h-4" />
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-100">Live Course Context</span>
-                                    </div>
-                                    <h2 className="text-3xl font-black mb-8 max-w-2xl leading-tight">{currentCourse.fullname}</h2>
-                                    <div className="flex items-center gap-4">
-                                        <div className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-[10px] font-black uppercase tracking-widest">
-                                            Auto-sync Active
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
                         {/* Data Card */}
                         <div className={`bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-indigo-500/5 transition-opacity duration-300 ${isRefetching ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                            
+                            {/* Card Header with Title and Button */}
+                            <div className="px-10 py-8 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-slate-50/50">
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-800 tracking-tight">
+                                        {currentCourse ? currentCourse.fullname : 'Select a course'}
+                                    </h3>
+                                    <p className="text-xs font-bold text-slate-400 mt-2 flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        LIVE STUDENT FEED
+                                    </p>
+                                </div>
+                                <button 
+                                    onClick={() => setIsCognitiveLoadModalOpen(true)}
+                                    className="group relative flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-900 text-white shadow-xl hover:bg-slate-800 transition-all active:scale-95 shrink-0"
+                                >
+                                    <Brain className="w-4 h-4 text-indigo-400" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{t('cognitiveLoad.title')}</span>
+                                </button>
+                            </div>
+
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
-                                    <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
+                                    <thead className="bg-slate-50/80 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black border-b border-slate-100">
                                         <tr>
                                             <th className="px-10 py-6">{t('admin.governance.studentTable.name')}</th>
                                             <th className="px-10 py-6 text-center">{t('admin.governance.studentTable.grades')}</th>
