@@ -32,7 +32,7 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
         errRate: simValues.errRate,
         switchRate: simValues.switchRate,
         timePressure: simValues.timePressure,
-        progressGap: simValues.progressGap
+        progressRate: 1 - simValues.progressGap // Sync progressRate from progressGap
     });
 
     useEffect(() => {

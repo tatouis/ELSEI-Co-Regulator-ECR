@@ -54,19 +54,21 @@ function sigmoid(x: number): number {
  * Normalizes a feature value
  */
 function normalizeFeature(value: number, featureName: string): number {
+  const val = isNaN(value) || value === undefined ? 0 : value;
+  
   // Rates are already normalized between 0 and 1
   if (['retryRate', 'errRate', 'switchRate', 'progressRate', 'progressGap'].includes(featureName)) {
-    return Math.max(0, Math.min(1, value));
+    return Math.max(0, Math.min(1, val));
   }
   
   // TimePressure is normalized by clamping at 2 and dividing by 2 (as suggested)
   if (featureName === 'timePressure') {
-    return Math.min(value, 2) / 2;
+    return Math.min(val, 2) / 2;
   }
   
   // For other count-based variables, we use simple clamping for now 
   // until cohort statistics are available.
-  return Math.min(value, 10) / 10; 
+  return Math.min(val, 10) / 10; 
 }
 
 /**

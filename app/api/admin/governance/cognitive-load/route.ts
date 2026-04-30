@@ -44,19 +44,37 @@ export async function GET(request: Request) {
     }
 
     // Features to gather
-    const features: any = {};
+    const features: any = {
+        attempts: 0,
+        activitiesAttempted: 0,
+        wrongAnswers: 0,
+        totalAnswers: 0,
+        completedActivities: 0,
+        totalActivities: 0,
+        timeSpentActive: 0
+    };
 
     if (targetCourseId && targetUserId) {
-        // 1. Attempts & Wrong Answers
+        // 1. Attempts & Grades from ALL Quizzes
         try {
             const quizzes = await fetchMoodle('mod_quiz_get_quizzes_by_courses', `&courseids[0]=${targetCourseId}`);
-            if (quizzes && quizzes.quizzes && quizzes.quizzes.length > 0) {
-                const quizId = quizzes.quizzes[0].id;
-                const attempts = await fetchMoodle('mod_quiz_get_user_attempts', `&quizid=${quizId}&userid=${targetUserId}`);
-                if (attempts && attempts.attempts) {
-                    features.attempts = attempts.attempts.length;
-                    // For wrong answers, we'd normally need mod_quiz_get_attempt_review for each attempt
-                    // but that's too many calls. We'll mark as pending or try to estimate from grades.
+            if (quizzes && quizzes.quizzes && Array.isArray(quizzes.quizzes)) {
+                for (const quiz of quizzes.quizzes) {
+                    const attempts = await fetchMoodle('mod_quiz_get_user_attempts', `&quizid=${quiz.id}&userid=${targetUserId}`);
+                    if (attempts && attempts.attempts && Array.isArray(attempts.attempts)) {
+                        features.attempts += attempts.attempts.length;
+                        
+                        // Estimate wrong answers from grades if possible
+                        for (const att of attempts.attempts) {
+                            if (att.state === 'finished' && att.sumgrades !== undefined) {
+                                const maxGrade = quiz.grade || 10;
+                                const wrongness = Math.max(0, maxGrade - att.sumgrades);
+                                // Treat each attempt as a "total answer" set
+                                features.totalAnswers += 1;
+                                features.wrongAnswers += (wrongness / maxGrade); 
+                            }
+                        }
+                    }
                 }
             }
         } catch (e) { console.warn('Cognitive Load API: Quiz fetch failed', e); }
@@ -64,16 +82,28 @@ export async function GET(request: Request) {
         // 2. Completion & Progress
         try {
             const comp = await fetchMoodle('core_completion_get_activities_completion_status', `&courseid=${targetCourseId}&userid=${targetUserId}`);
-            if (comp && comp.statuses) {
+            if (comp && comp.statuses && Array.isArray(comp.statuses)) {
                 features.completedActivities = comp.statuses.filter((s: any) => s.state === 1).length;
                 features.totalActivities = comp.statuses.length;
                 features.progressRate = features.completedActivities / (features.totalActivities || 1);
             }
         } catch (e) { console.warn('Cognitive Load API: Completion fetch failed', e); }
 
-        // 3. Time Spent (from ECR local pulse data as proxy if Moodle logs unavailable)
+        // 3. Activity Logs (Proxy for SwitchRate and ActivitiesAttempted)
+        // Note: Many Moodle installs don't expose logstore via WS by default.
+        // We'll use a fallback if empty.
+        try {
+            // This is a heuristic: check navigation options or recent courses to see "activity"
+            const nav = await fetchMoodle('core_course_get_user_navigation_options', `&courseids[0]=${targetCourseId}`);
+            if (nav && nav.courses && nav.courses.length > 0) {
+                // Just a proxy to show we have *some* data
+                features.activitiesAttempted = features.completedActivities + (features.attempts > 0 ? 1 : 0);
+            }
+        } catch (e) {}
+
+        // 4. Time Spent (from ECR local pulse data)
         const ecrUser = await prisma.user.findFirst({
-            where: { OR: [{ username: `learner${targetUserId}` }, { id: targetUserId.toString() }] }, // Heuristic
+            where: { OR: [{ username: `learner${targetUserId}` }, { id: targetUserId.toString() }] }, 
             select: { id: true }
         });
         if (ecrUser) {
