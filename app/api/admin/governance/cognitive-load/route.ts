@@ -9,6 +9,13 @@ export async function GET(request: Request) {
     const courseId = searchParams.get('courseId');
     const userId = searchParams.get('userId');
 
+    if (!courseId || !userId) {
+        return NextResponse.json({ error: 'Faltan parámetros courseId o userId' }, { status: 400 });
+    }
+
+    const targetUserId = parseInt(userId);
+    const targetCourseId = parseInt(courseId);
+
     // Fetch Moodle Config
     const configs = await prisma.systemConfig.findMany({
       where: { key: { in: ['moodle_url', 'moodle_token'] } }
@@ -22,94 +29,117 @@ export async function GET(request: Request) {
     const cleanUrl = moodleUrl.replace(/\/$/, "");
 
     const fetchMoodle = async (wsfunction: string, extras = '') => {
-      const resp = await fetch(`${cleanUrl}/webservice/rest/server.php?wstoken=${moodleToken}&wsfunction=${wsfunction}&moodlewsrestformat=json${extras}`, { signal: AbortSignal.timeout(6000) });
-      return resp.json();
+      try {
+        const resp = await fetch(`${cleanUrl}/webservice/rest/server.php?wstoken=${moodleToken}&wsfunction=${wsfunction}&moodlewsrestformat=json${extras}`, { signal: AbortSignal.timeout(8000) });
+        return resp.json();
+      } catch (e) {
+        console.warn(`Moodle API Error (${wsfunction}):`, e);
+        return null;
+      }
     };
 
-    let targetUserId = userId ? parseInt(userId) : null;
-    let targetCourseId = courseId ? parseInt(courseId) : null;
+    // 1. Core Data Fetching
+    const [quizzes, comp, calendar, grades, assignments] = await Promise.all([
+        fetchMoodle('mod_quiz_get_quizzes_by_courses', `&courseids[0]=${targetCourseId}`),
+        fetchMoodle('core_completion_get_activities_completion_status', `&courseid=${targetCourseId}&userid=${targetUserId}`),
+        fetchMoodle('core_calendar_get_action_events_by_course', `&courseid=${targetCourseId}`),
+        fetchMoodle('gradereport_user_get_grade_items', `&courseid=${targetCourseId}&userid=${targetUserId}`),
+        fetchMoodle('mod_assign_get_assignments', `&courseids[0]=${targetCourseId}`)
+    ]);
 
-    // If no courseId, get the first one
-    if (!targetCourseId) {
-        const courses = await fetchMoodle('core_course_get_courses');
-        const realCourses = Array.isArray(courses) ? courses.filter((c: any) => c.id !== 1) : [];
-        if (realCourses.length > 0) targetCourseId = realCourses[0].id;
-    }
+    const features: any = {};
 
-    // If no userId, get the first student from the course
-    if (targetCourseId && !targetUserId) {
-        const users = await fetchMoodle('core_enrol_get_enrolled_users', `&courseid=${targetCourseId}`);
-        const students = Array.isArray(users) ? users.filter((u: any) => u.roles?.some((r: any) => r.shortname === 'student') || u.roles?.length === 0) : [];
-        if (students.length > 0) targetUserId = students[0].id;
-    }
+    // 2. RetryPressure, ErrorPressure, QuizTimePressure
+    if (quizzes?.quizzes) {
+        let totalAttempts = 0;
+        let quizzesAttempted = 0;
+        let totalErrorSum = 0;
+        let totalTimePressureSum = 0;
+        let quizzesWithTimeLimit = 0;
 
-    // Features to gather
-    const features: any = {
-        attempts: 0,
-        activitiesAttempted: 0,
-        wrongAnswers: 0,
-        totalAnswers: 0,
-        completedActivities: 0,
-        totalActivities: 0,
-        timeSpentActive: 0
-    };
-
-    if (targetCourseId && targetUserId) {
-        // 1. Attempts & Grades from ALL Quizzes
-        try {
-            const quizzes = await fetchMoodle('mod_quiz_get_quizzes_by_courses', `&courseids[0]=${targetCourseId}`);
-            if (quizzes && quizzes.quizzes && Array.isArray(quizzes.quizzes)) {
-                for (const quiz of quizzes.quizzes) {
-                    const attempts = await fetchMoodle('mod_quiz_get_user_attempts', `&quizid=${quiz.id}&userid=${targetUserId}`);
-                    if (attempts && attempts.attempts && Array.isArray(attempts.attempts)) {
-                        features.attempts += attempts.attempts.length;
-                        
-                        // Estimate wrong answers from grades if possible
-                        for (const att of attempts.attempts) {
-                            if (att.state === 'finished' && att.sumgrades !== undefined) {
-                                const maxGrade = quiz.grade || 10;
-                                const wrongness = Math.max(0, maxGrade - att.sumgrades);
-                                // Treat each attempt as a "total answer" set
-                                features.totalAnswers += 1;
-                                features.wrongAnswers += (wrongness / maxGrade); 
-                            }
-                        }
+        for (const quiz of quizzes.quizzes) {
+            const attempts = await fetchMoodle('mod_quiz_get_user_attempts', `&quizid=${quiz.id}&userid=${targetUserId}`);
+            if (attempts?.attempts?.length > 0) {
+                quizzesAttempted++;
+                totalAttempts += attempts.attempts.length;
+                
+                for (const att of attempts.attempts) {
+                    // Error Pressure
+                    if (att.state === 'finished' && att.sumgrades !== undefined) {
+                        const maxGrade = quiz.grade || 10;
+                        totalErrorSum += (1 - (att.sumgrades / maxGrade));
+                    }
+                    // Quiz Time Pressure
+                    if (quiz.timelimit > 0 && att.timefinish > 0) {
+                        const duration = att.timefinish - att.timestart;
+                        totalTimePressureSum += Math.min(1, duration / quiz.timelimit);
+                        quizzesWithTimeLimit++;
                     }
                 }
             }
-        } catch (e) { console.warn('Cognitive Load API: Quiz fetch failed', e); }
-
-        // 2. Completion & Progress
-        try {
-            const comp = await fetchMoodle('core_completion_get_activities_completion_status', `&courseid=${targetCourseId}&userid=${targetUserId}`);
-            if (comp && comp.statuses && Array.isArray(comp.statuses)) {
-                features.completedActivities = comp.statuses.filter((s: any) => s.state === 1).length;
-                features.totalActivities = comp.statuses.length;
-                features.progressRate = features.completedActivities / (features.totalActivities || 1);
-            }
-        } catch (e) { console.warn('Cognitive Load API: Completion fetch failed', e); }
-
-        // 3. Activity Logs (Proxy for SwitchRate and ActivitiesAttempted)
-        // Note: Many Moodle installs don't expose logstore via WS by default.
-        // We'll use a fallback if empty.
-        try {
-            // This is a heuristic: check navigation options or recent courses to see "activity"
-            const nav = await fetchMoodle('core_course_get_user_navigation_options', `&courseids[0]=${targetCourseId}`);
-            if (nav && nav.courses && nav.courses.length > 0) {
-                // Just a proxy to show we have *some* data
-                features.activitiesAttempted = features.completedActivities + (features.attempts > 0 ? 1 : 0);
-            }
-        } catch (e) {}
-
-        // 4. Time Spent (from ECR local pulse data)
-        const ecrUser = await prisma.user.findFirst({
-            where: { OR: [{ username: `learner${targetUserId}` }, { id: targetUserId.toString() }] }, 
-            select: { id: true }
-        });
-        if (ecrUser) {
-            const pulseCount = await prisma.learnerState.count({ where: { userId: ecrUser.id } });
-            features.timeSpentActive = Math.round((pulseCount * 10) / 60); // minutes
         }
+        features.retryPressure = totalAttempts / (quizzesAttempted + 1) / 3; // Normalized by 3
+        features.errorPressure = totalAttempts > 0 ? totalErrorSum / totalAttempts : 0;
+        features.quizTimePressure = quizzesWithTimeLimit > 0 ? totalTimePressureSum / quizzesWithTimeLimit : 0;
+    }
+
+    // 3. LowProgress
+    if (comp?.statuses) {
+        const completed = comp.statuses.filter((s: any) => s.state === 1).length;
+        const total = comp.statuses.length;
+        const progressRate = completed / (total || 1);
+        features.lowProgress = 1 - progressRate;
+    }
+
+    // 4. DeadlinePressure & NonCompletionRisk
+    if (calendar?.events) {
+        const now = Math.floor(Date.now() / 1000);
+        let overdueIncomplete = 0;
+        let totalDue = 0;
+        let minTimeRemaining = Infinity;
+
+        calendar.events.forEach((ev: any) => {
+            if (ev.eventtype === 'due' || ev.eventtype === 'close') {
+                totalDue++;
+                const timeRemaining = ev.timestart - now;
+                if (timeRemaining < 0) {
+                    // Check if activity is incomplete
+                    const isComplete = comp?.statuses?.find((s: any) => s.cmid === ev.instance)?.state === 1;
+                    if (!isComplete) overdueIncomplete++;
+                } else {
+                    minTimeRemaining = Math.min(minTimeRemaining, timeRemaining);
+                }
+            }
+        });
+
+        features.nonCompletionRisk = totalDue > 0 ? overdueIncomplete / totalDue : 0;
+        // Deadline pressure: 1 if something is very close (< 2 days)
+        if (minTimeRemaining !== Infinity) {
+            const twoDays = 2 * 24 * 60 * 60;
+            features.deadlinePressure = Math.max(0, 1 - (minTimeRemaining / twoDays));
+        } else if (overdueIncomplete > 0) {
+            features.deadlinePressure = 1;
+        }
+    }
+
+    // 5. GradeDrop
+    if (grades?.usergrades?.[0]?.gradeitems) {
+        const items = grades.usergrades[0].gradeitems.filter((i: any) => i.graderaw !== null && i.grademax > 0);
+        if (items.length >= 2) {
+            // Compare last grade with average of previous ones
+            const sortedItems = items.sort((a: any, b: any) => (a.iteminstance || 0) - (b.iteminstance || 0));
+            const last = sortedItems[sortedItems.length - 1];
+            const previous = sortedItems.slice(0, -1);
+            const prevAvg = previous.reduce((acc: number, curr: any) => acc + (curr.graderaw / curr.grademax), 0) / previous.length;
+            const lastNorm = last.graderaw / last.grademax;
+            features.gradeDrop = Math.max(0, prevAvg - lastNorm);
+        }
+    }
+
+    // 6. AssignmentPressure
+    if (assignments?.courses?.[0]?.assignments) {
+        // This would require mod_assign_get_submissions for each assignment
+        // For now, we'll proxy it from nonCompletionRisk if it involves assignments
     }
 
     const result = calculateCognitiveLoad(features);
@@ -118,10 +148,12 @@ export async function GET(request: Request) {
         success: true,
         targetUserId,
         targetCourseId,
-        ...result
+        ...result,
+        rawFeatures: features // For debugging
     });
 
   } catch (error: any) {
+    console.error('Cognitive Load Route Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

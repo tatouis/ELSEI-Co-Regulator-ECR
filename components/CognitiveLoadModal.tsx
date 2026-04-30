@@ -22,19 +22,21 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
     const [data, setData] = useState<any>(null);
     const [selectedId, setSelectedId] = useState<string | undefined>(studentId);
     const [simValues, setSimValues] = useState({
-        retryRate: 0.2,
-        errRate: 0.15,
-        switchRate: 0.3,
-        timePressure: 0.5,
-        progressGap: 0.4
+        retryPressure: 0.2,
+        errorPressure: 0.15,
+        quizTimePressure: 0.3,
+        deadlinePressure: 0.5,
+        lowProgress: 0.4,
+        nonCompletionRisk: 0.1
     });
 
     const simResult = calculateCognitiveLoad({
-        retryRate: simValues.retryRate,
-        errRate: simValues.errRate,
-        switchRate: simValues.switchRate,
-        timePressure: simValues.timePressure,
-        progressRate: 1 - simValues.progressGap 
+        retryPressure: simValues.retryPressure,
+        errorPressure: simValues.errorPressure,
+        quizTimePressure: simValues.quizTimePressure,
+        deadlinePressure: simValues.deadlinePressure,
+        lowProgress: simValues.lowProgress,
+        nonCompletionRisk: simValues.nonCompletionRisk
     });
 
     useEffect(() => {
@@ -58,11 +60,12 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
             setData(result);
             if (result.success) {
                 setSimValues({
-                    retryRate: result.features.retryRate,
-                    errRate: result.features.errRate,
-                    switchRate: result.features.switchRate,
-                    timePressure: result.features.timePressure,
-                    progressGap: result.features.progressGap
+                    retryPressure: result.features.retryPressure || 0,
+                    errorPressure: result.features.errorPressure || 0,
+                    quizTimePressure: result.features.quizTimePressure || 0,
+                    deadlinePressure: result.features.deadlinePressure || 0,
+                    lowProgress: result.features.lowProgress || 0,
+                    nonCompletionRisk: result.features.nonCompletionRisk || 0
                 });
             }
         } catch (error) {
@@ -76,13 +79,11 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-            {/* Backdrop */}
             <div 
                 className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
                 onClick={onClose}
             />
             
-            {/* Modal Content */}
             <div className="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-300">
                 
                 {/* Header */}
@@ -92,7 +93,7 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                             <Brain className="w-8 h-8" />
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black text-slate-900">Cálculo de Carga Cognitiva</h2>
+                            <h2 className="text-3xl font-black text-slate-900">Carga Cognitiva (Modo API-only)</h2>
                             <div className="mt-2 flex items-center gap-4">
                                 <span className="text-xs font-black uppercase tracking-widest text-slate-400">Seleccionar Estudiante:</span>
                                 <select 
@@ -121,12 +122,12 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                     {!selectedId ? (
                         <div className="h-64 flex flex-col items-center justify-center text-slate-400 space-y-4">
                             <User className="w-16 h-16 opacity-20" />
-                            <p className="font-bold text-sm uppercase tracking-widest">Selecciona un estudiante para ver su carga cognitiva</p>
+                            <p className="font-bold text-sm uppercase tracking-widest">Selecciona un estudiante para iniciar el análisis</p>
                         </div>
                     ) : loading ? (
                         <div className="h-64 flex flex-col items-center justify-center text-indigo-400 space-y-4">
                             <Activity className="w-16 h-16 animate-pulse" />
-                            <p className="font-bold text-sm uppercase tracking-widest">Calculando métricas en tiempo real...</p>
+                            <p className="font-bold text-sm uppercase tracking-widest">Consultando Moodle API...</p>
                         </div>
                     ) : (
                         <>
@@ -141,8 +142,8 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                                 <div className="flex items-center gap-4">
                                     <Target className="w-6 h-6 opacity-80" />
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">Confianza del Cálculo</p>
-                                        <p className="text-lg font-black">{data.confidence === 'Alta' ? 'Alta Confianza' : data.confidence === 'Media' ? 'Media Confianza' : 'Baja Confianza'}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">Nivel de Confianza (API)</p>
+                                        <p className="text-lg font-black">{data.confidence} Confianza</p>
                                     </div>
                                 </div>
                                 {data.confidence === 'Alta' ? <CheckCircle className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
@@ -159,8 +160,8 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                             <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50 flex items-center gap-4">
                                 <Database className="w-6 h-6 text-cyan-500" />
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Muestras de Datos</p>
-                                    <p className="text-lg font-black text-slate-900">{Object.keys(data.features).filter(k => data.features[k] > 0).length} Variables activas</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Muestras API</p>
+                                    <p className="text-lg font-black text-slate-900">{Object.keys(data.features).filter(k => data.features[k] > 0).length} Señales activas</p>
                                 </div>
                             </div>
                         </div>
@@ -170,80 +171,51 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                     <section className="space-y-8">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                <Calculator className="w-4 h-4 text-indigo-400" /> ECUACIÓN PROPUESTA
+                                <Calculator className="w-4 h-4 text-indigo-400" /> MODELO EXTENDIDO API-ONLY
                             </h3>
                             <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-widest">
                                 <Info className="w-3 h-3" />
-                                Estimación por ventana temporal (t)
+                                Regresión Logística de 10 Variables
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div className="bg-indigo-600 rounded-[32px] p-8 text-white shadow-2xl shadow-indigo-200">
-                                <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-6">Cálculo de Carga Cognitiva (CL)</p>
-                                <div className="font-mono text-xl lg:text-2xl font-black leading-relaxed">
-                                    CL<sub>u,t</sub> = σ(β₀ + β₁·R + β₂·E + β₃·S + β₄·T - β₅·P)
+                                <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-6">Fórmula API-only (EduAI)</p>
+                                <div className="font-mono text-lg lg:text-xl font-black leading-relaxed">
+                                    CL = σ(β₀ + β₁·RP + β₂·EP + β₃·TP + β₄·DP + β₅·LP + β₆·GD + ...)
                                 </div>
                                 <div className="mt-8 pt-8 border-t border-white/10 space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-[10px] font-bold text-indigo-200 uppercase">Función Sigmoide</p>
+                                        <p className="text-[10px] font-bold text-indigo-200 uppercase">Función de Activación</p>
                                         <p className="font-mono text-sm font-black">σ(x) = 1 / (1 + e⁻ˣ)</p>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <p className="text-[10px] font-bold text-indigo-200 uppercase">Rango de Resultado</p>
-                                        <p className="font-mono text-sm font-black">0 ≤ CL<sub>u,t</sub> ≤ 1</p>
+                                        <p className="text-[10px] font-bold text-indigo-200 uppercase">Base de Datos</p>
+                                        <p className="font-mono text-sm font-black">Moodle REST Services Only</p>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="bg-slate-900 rounded-[32px] p-8 text-white shadow-2xl">
-                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-6">Definición de Variables Clave</p>
-                                <div className="space-y-6">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-[11px] font-mono">
-                                            <span className="text-indigo-400">RetryRate (R)</span>
-                                            <span className="text-slate-500">Attempts / (ActivitiesAttempted + 1)</span>
-                                        </div>
-                                        <p className="text-[10px] text-slate-400 leading-relaxed italic">
-                                            Mide la presión por intentos repetidos en cuestionarios.
-                                        </p>
+                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-6">Definiciones de Peso (β)</p>
+                                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-mono text-indigo-400">β₁ RetryPressure: 0.8</p>
+                                        <p className="text-[9px] text-slate-500 italic">Reintentos en tests.</p>
                                     </div>
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-[11px] font-mono">
-                                            <span className="text-cyan-400">ErrRate (E)</span>
-                                            <span className="text-slate-500">WrongAnswers / TotalAnswers</span>
-                                        </div>
-                                        <p className="text-[10px] text-slate-400 leading-relaxed italic">
-                                            Tasa de error y fallos técnicos o conceptuales.
-                                        </p>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-mono text-cyan-400">β₂ ErrorPressure: 1.2</p>
+                                        <p className="text-[9px] text-slate-500 italic">Bajo rendimiento.</p>
                                     </div>
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-[11px] font-mono">
-                                            <span className="text-amber-400">SwitchRate (S)</span>
-                                            <span className="text-slate-500">Σ I(cᵢ ≠ cᵢ₊₁) / (n - 1)</span>
-                                        </div>
-                                        <p className="text-[10px] text-slate-400 leading-relaxed italic">
-                                            Cambios frecuentes entre páginas o actividades (Logs).
-                                        </p>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-mono text-amber-400">β₄ DeadlinePres: 0.9</p>
+                                        <p className="text-[9px] text-slate-500 italic">Estrés por tiempo.</p>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-slate-50 rounded-[32px] p-8 border border-slate-100 mt-8">
-                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-6 text-center">Interpretación del Resultado</p>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-emerald-100 shadow-sm">
-                                    <span className="text-xs font-bold text-slate-700">0.00 - 0.33</span>
-                                    <span className="text-xs font-black uppercase text-emerald-600">Carga Baja</span>
-                                </div>
-                                <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-amber-100 shadow-sm">
-                                    <span className="text-xs font-bold text-slate-700">0.34 - 0.66</span>
-                                    <span className="text-xs font-black uppercase text-amber-600">Carga Moderada</span>
-                                </div>
-                                <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-rose-100 shadow-sm">
-                                    <span className="text-xs font-bold text-slate-700">0.67 - 1.00</span>
-                                    <span className="text-xs font-black uppercase text-rose-600">Carga Alta</span>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-mono text-emerald-400">β₅ LowProgress: 1.1</p>
+                                        <p className="text-[9px] text-slate-500 italic">Falta de avance.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -252,31 +224,34 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                     {/* Variables Table */}
                     <section className="space-y-6">
                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                            <Table className="w-4 h-4 text-cyan-400" /> TABLA DE REFERENCIA (MOODLE TABLES)
+                            <Table className="w-4 h-4 text-cyan-400" /> DICCIONARIO DE SEÑALES API
                         </h3>
                         <div className="bg-white rounded-[32px] border border-slate-100 overflow-hidden shadow-xl shadow-slate-200/50">
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-slate-50 text-[10px] uppercase font-black text-slate-400 tracking-widest">
                                     <tr>
                                         <th className="px-6 py-4">Variable</th>
-                                        <th className="px-6 py-4">Fórmula / Ecuación</th>
-                                        <th className="px-6 py-4">Moodle Table</th>
-                                        <th className="px-6 py-4">Campos (Fields)</th>
+                                        <th className="px-6 py-4">Fórmula</th>
+                                        <th className="px-6 py-4">Fuente API</th>
+                                        <th className="px-6 py-4 text-right">Valor</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 text-xs font-bold text-slate-700">
                                     {[
-                                        { name: 'Attempts', eq: 'COUNT(*)', table: 'mdl_quiz_attempts', fields: 'userid, attempt, quiz, timestart, state' },
-                                        { name: 'ActivitiesAttempted', eq: 'COUNT(DISTINCT contextinstanceid)', table: 'mdl_logstore_standard_log', fields: 'userid, contextinstanceid, timecreated' },
-                                        { name: 'WrongAnswers', eq: 'COUNT(state = "gradedwrong")', table: 'mdl_question_attempt_steps', fields: 'state, userid' },
-                                        { name: 'SwitchRate', eq: 'Σ I(cᵢ ≠ cᵢ₊₁) / (n - 1)', table: 'mdl_logstore_standard_log', fields: 'contextinstanceid, timecreated' },
-                                        { name: 'CompletedActivities', eq: 'COUNT(completionstate = 1)', table: 'mdl_course_modules_completion', fields: 'completionstate, userid' },
+                                        { name: 'RetryPressure', eq: 'Attempts / (Quizzes + 1)', source: 'mod_quiz_get_user_attempts', value: data?.features.retryPressure },
+                                        { name: 'ErrorPressure', eq: '1 - (Grade / Max)', source: 'gradereport_user_get_grade_items', value: data?.features.errorPressure },
+                                        { name: 'QuizTimePressure', eq: 'Duration / TimeLimit', source: 'mod_quiz_get_user_attempts', value: data?.features.quizTimePressure },
+                                        { name: 'DeadlinePressure', eq: '1 - (TimeLeft / Window)', source: 'core_calendar_get_action_events', value: data?.features.deadlinePressure },
+                                        { name: 'LowProgress', eq: '1 - (Completed / Total)', source: 'core_completion_get_activities', value: data?.features.lowProgress },
+                                        { name: 'GradeDrop', eq: 'PrevAvg - RecentAvg', source: 'gradereport_user_get_grade_items', value: data?.features.gradeDrop },
                                     ].map((v) => (
                                         <tr key={v.name} className="hover:bg-slate-50/50 transition-colors">
                                             <td className="px-6 py-4 font-mono text-indigo-600">{v.name}</td>
                                             <td className="px-6 py-4 text-slate-500 font-medium">{v.eq}</td>
-                                            <td className="px-6 py-4 font-mono text-[10px] uppercase text-slate-400">{v.table}</td>
-                                            <td className="px-6 py-4 font-mono text-[9px] text-slate-400">{v.fields}</td>
+                                            <td className="px-6 py-4 font-mono text-[10px] uppercase text-slate-400">{v.source}</td>
+                                            <td className="px-6 py-4 text-right font-mono text-slate-900">
+                                                {v.value !== undefined ? v.value.toFixed(2) : '--'}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -284,83 +259,63 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                         </div>
                     </section>
 
-                    {/* Improved Version & Simulator */}
+                    {/* Simulator */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                        {/* Improved Version */}
                         <div className="lg:col-span-5 space-y-6">
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                <Sparkles className="w-4 h-4 text-amber-400" /> MEJORA RECOMENDADA
+                                <Sparkles className="w-4 h-4 text-amber-400" /> AVISO MODO API-ONLY
                             </h3>
                             <div className="bg-slate-900 rounded-[32px] p-8 text-white h-full">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500">
-                                        <Zap className="w-4 h-4" />
-                                    </div>
-                                    <h4 className="text-sm font-black uppercase tracking-widest">Modelo Extendido</h4>
-                                </div>
-                                <p className="text-slate-400 text-xs leading-relaxed mb-8">
-                                    Para una mayor precisión, se recomienda integrar variables de "ayuda reactiva" y "presión de entrega":
+                                <p className="text-slate-400 text-xs leading-relaxed font-medium">
+                                    Esta estimación usa únicamente los Web Services estándar de Moodle. 
+                                    Las señales de navegación real (cambios entre páginas, revisitas) no están disponibles sin logs directos o base de datos.
                                 </p>
-                                <ul className="space-y-4">
-                                    {[
-                                        { name: 'DeadlinePressure', desc: 'Cercanía a la fecha límite' },
-                                        { name: 'HelpSeeking', desc: 'Búsqueda de ayuda tras error' },
-                                        { name: 'RevisitRate', desc: 'Retorno a recursos ya vistos' },
-                                        { name: 'GradeDrop', desc: 'Caída de rendimiento reciente' }
-                                    ].map((item) => (
-                                        <li key={item.name} className="flex items-start gap-3">
-                                            <ChevronRight className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                                            <div>
-                                                <span className="text-xs font-bold text-white block">{item.name}</span>
-                                                <span className="text-[10px] text-slate-500">{item.desc}</span>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
+                                <div className="mt-8 space-y-4">
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                        <p className="text-[10px] font-black uppercase text-indigo-400 mb-1">Confianza Alta</p>
+                                        <p className="text-[10px] text-slate-400">Requiere al menos 6 variables con datos reales.</p>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                        <p className="text-[10px] font-black uppercase text-amber-400 mb-1">Detección de Riesgo</p>
+                                        <p className="text-[10px] text-slate-400">Se prioriza la cercanía de fechas límite y caídas de notas.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Simulator */}
                         <div className="lg:col-span-7 space-y-6">
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                <Sliders className="w-4 h-4 text-indigo-400" /> SIMULADOR DIDÁCTICO
+                                <Sliders className="w-4 h-4 text-indigo-400" /> SIMULADOR API-ONLY
                             </h3>
                             <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-xl shadow-slate-200/50">
                                 <div className="flex items-center justify-between mb-8">
-                                    <div>
-                                        <h4 className="text-sm font-black text-slate-800">Ajustar Variables de Ejemplo</h4>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Solo para fines educativos</p>
-                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Ajuste de señales proxies</p>
                                     <div className="text-right">
                                         <p className="text-3xl font-black text-indigo-600">{(simResult.score * 100).toFixed(1)}%</p>
-                                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-                                            simResult.level === 'Alta' ? 'text-rose-500' :
-                                            simResult.level === 'Moderada' ? 'text-amber-500' :
-                                            'text-emerald-500'
+                                        <p className={`text-[10px] font-black uppercase tracking-widest ${
+                                            simResult.level === 'Alta' ? 'text-rose-500' : 'text-emerald-500'
                                         }`}>{simResult.level}</p>
                                     </div>
                                 </div>
                                 <div className="space-y-6">
                                     {[
-                                        { id: 'retryRate', label: 'RetryRate', min: 0, max: 1, step: 0.01 },
-                                        { id: 'errRate', label: 'ErrRate', min: 0, max: 1, step: 0.01 },
-                                        { id: 'switchRate', label: 'SwitchRate', min: 0, max: 1, step: 0.01 },
-                                        { id: 'timePressure', label: 'TimePressure (Norm)', min: 0, max: 1, step: 0.01 },
-                                        { id: 'progressGap', label: 'ProgressGap', min: 0, max: 1, step: 0.01 },
+                                        { id: 'retryPressure', label: 'RetryPressure' },
+                                        { id: 'errorPressure', label: 'ErrorPressure' },
+                                        { id: 'quizTimePressure', label: 'QuizTimePressure' },
+                                        { id: 'deadlinePressure', label: 'DeadlinePressure' },
+                                        { id: 'lowProgress', label: 'LowProgress' },
+                                        { id: 'nonCompletionRisk', label: 'NonCompletionRisk' },
                                     ].map((s) => (
                                         <div key={s.id} className="space-y-2">
-                                            <div className="flex justify-between text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                                            <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 tracking-widest">
                                                 <label>{s.label}</label>
                                                 <span>{(simValues as any)[s.id].toFixed(2)}</span>
                                             </div>
                                             <input 
-                                                type="range"
-                                                min={s.min}
-                                                max={s.max}
-                                                step={s.step}
+                                                type="range" min="0" max="1" step="0.01"
                                                 value={(simValues as any)[s.id]}
                                                 onChange={(e) => setSimValues(prev => ({ ...prev, [s.id]: parseFloat(e.target.value) }))}
-                                                className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                                className="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                                             />
                                         </div>
                                     ))}
@@ -369,21 +324,17 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                         </div>
                     </div>
 
-                    {/* Limitations */}
                     <section className="bg-rose-50/50 rounded-[32px] p-8 border border-rose-100/50">
                         <div className="flex items-center gap-4 mb-4">
                             <AlertTriangle className="w-6 h-6 text-rose-500" />
-                            <h4 className="text-sm font-black text-rose-900 uppercase tracking-widest">Limitaciones y Advertencias</h4>
+                            <h4 className="text-sm font-black text-rose-900 uppercase tracking-widest">Limitaciones API-only</h4>
                         </div>
                         <p className="text-xs text-rose-700 leading-relaxed font-medium">
-                            La carga cognitiva se estima a partir de trazas de interacción. Algunos comportamientos pueden tener múltiples interpretaciones: 
-                            mucho tiempo en una actividad puede indicar dificultad, reflexión profunda o simplemente inactividad. 
-                            Por eso el cálculo incluye reglas de limpieza temporal, normalización y un nivel de confianza basado en la disponibilidad de datos.
+                            Este modo no dispone de señales de navegación real. Las señales de "SwitchRate" o "HelpSeeking" son estimadas mediante proxies de actividades completadas y tiempos de cuestionario.
                         </p>
                     </section>
                         </>
                     )}
-
                 </div>
             </div>
         </div>

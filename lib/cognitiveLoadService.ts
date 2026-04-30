@@ -1,166 +1,119 @@
 
 /**
- * Cognitive Load Service
- * Handles the calculation of estimated cognitive load based on Moodle signals.
- * Implementation based on the "Objetivonuevo" mission prompt.
+ * Cognitive Load Calculation Service (API-only version)
+ * Based on the Extended API Documentation for EduAI
  */
 
 export interface CognitiveLoadFeatures {
-  attempts: number;
-  activitiesAttempted: number;
-  retryRate: number;
-  wrongAnswers: number;
-  totalAnswers: number;
-  errRate: number;
-  switchRate: number;
-  timeSpentActive: number;
-  expectedTime: number;
-  timePressure: number;
-  completedActivities: number;
-  totalActivities: number;
-  progressRate: number;
-  progressGap: number;
-}
-
-export interface CognitiveLoadResult {
-  score: number;
-  level: 'Baja' | 'Moderada' | 'Alta';
-  confidence: 'Alta' | 'Media' | 'Baja' | 'Insuficiente';
-  features: CognitiveLoadFeatures;
-  normalizedFeatures: Record<string, number>;
-  missingSources: string[];
-  warnings: string[];
+  // Core API-only Variables (0-1)
+  retryPressure?: number;       // β1
+  errorPressure?: number;       // β2
+  quizTimePressure?: number;    // β3
+  deadlinePressure?: number;    // β4
+  lowProgress?: number;         // β5
+  gradeDrop?: number;           // β6
+  nonCompletionRisk?: number;   // β7
+  assignmentPressure?: number;  // β8
+  lessonDifficulty?: number;    // β9
+  contentCoverageGap?: number;  // β10
+  
+  // Legacy support
+  retryRate?: number;
+  errRate?: number;
+  switchRate?: number;
+  timePressure?: number;
+  progressRate?: number;
 }
 
 export const COGNITIVE_LOAD_DEFAULTS = {
-  beta0: -2.0, // Bias
-  beta1: 1.5,  // RetryRate
-  beta2: 2.0,  // ErrRate
-  beta3: 1.0,  // SwitchRate
-  beta4: 1.5,  // TimePressure
-  beta5: 1.0,  // ProgressGap (High gap = high load)
-  inactivityThresholdMinutes: 30,
-  epsilon: 0.000001
+  beta0: -1.5,  // Base intercept
+  beta1: 0.8,   // RetryPressure
+  beta2: 1.2,   // ErrorPressure
+  beta3: 0.7,   // QuizTimePressure
+  beta4: 0.9,   // DeadlinePressure
+  beta5: 1.1,   // LowProgress
+  beta6: 0.6,   // GradeDrop
+  beta7: 0.8,   // NonCompletionRisk
+  beta8: 0.7,   // AssignmentPressure
+  beta9: 0.5,   // LessonDifficulty
+  beta10: 0.4   // ContentCoverageGap
 };
-
-/**
- * Sigmoid function
- */
-function sigmoid(x: number): number {
-  return 1 / (1 + Math.exp(-x));
-}
 
 /**
  * Normalizes a feature value
  */
-function normalizeFeature(value: number, featureName: string): number {
-  const val = isNaN(value) || value === undefined ? 0 : value;
+function normalizeFeature(value: number | undefined, featureName: string): number {
+  const val = value === undefined || isNaN(value) ? 0 : value;
   
-  // Rates are already normalized between 0 and 1
-  if (['retryRate', 'errRate', 'switchRate', 'progressRate', 'progressGap'].includes(featureName)) {
+  // Most API-only variables are already normalized by the API layer (0-1)
+  if ([
+    'retryPressure', 'errorPressure', 'quizTimePressure', 'deadlinePressure', 
+    'lowProgress', 'gradeDrop', 'nonCompletionRisk', 'assignmentPressure', 
+    'lessonDifficulty', 'contentCoverageGap',
+    'retryRate', 'errRate', 'switchRate', 'progressRate'
+  ].includes(featureName)) {
     return Math.max(0, Math.min(1, val));
   }
   
-  // TimePressure is normalized by clamping at 2 and dividing by 2 (as suggested)
   if (featureName === 'timePressure') {
     return Math.min(val, 2) / 2;
   }
   
-  // For other count-based variables, we use simple clamping for now 
-  // until cohort statistics are available.
   return Math.min(val, 10) / 10; 
 }
 
 /**
- * Calculates estimated cognitive load
+ * Estimates cognitive load based on the logistic regression model
  */
-export function calculateCognitiveLoad(features: Partial<CognitiveLoadFeatures>): CognitiveLoadResult {
-  const f: CognitiveLoadFeatures = {
-    attempts: features.attempts ?? 0,
-    activitiesAttempted: features.activitiesAttempted ?? 0,
-    retryRate: features.retryRate ?? 0,
-    wrongAnswers: features.wrongAnswers ?? 0,
-    totalAnswers: features.totalAnswers ?? 0,
-    errRate: features.errRate ?? 0,
-    switchRate: features.switchRate ?? 0,
-    timeSpentActive: features.timeSpentActive ?? 0,
-    expectedTime: features.expectedTime ?? 0,
-    timePressure: features.timePressure ?? 0,
-    completedActivities: features.completedActivities ?? 0,
-    totalActivities: features.totalActivities ?? 0,
-    progressRate: features.progressRate ?? 0,
-    progressGap: features.progressGap ?? (1 - (features.progressRate ?? 0))
+export function calculateCognitiveLoad(features: CognitiveLoadFeatures) {
+  // Map legacy values if new ones aren't provided
+  const norm = {
+    retryPressure: normalizeFeature(features.retryPressure ?? features.retryRate, 'retryPressure'),
+    errorPressure: normalizeFeature(features.errorPressure ?? features.errRate, 'errorPressure'),
+    quizTimePressure: normalizeFeature(features.quizTimePressure ?? features.timePressure, 'quizTimePressure'),
+    deadlinePressure: normalizeFeature(features.deadlinePressure, 'deadlinePressure'),
+    lowProgress: normalizeFeature(features.lowProgress ?? (features.progressRate !== undefined ? 1 - features.progressRate : undefined), 'lowProgress'),
+    gradeDrop: normalizeFeature(features.gradeDrop, 'gradeDrop'),
+    nonCompletionRisk: normalizeFeature(features.nonCompletionRisk, 'nonCompletionRisk'),
+    assignmentPressure: normalizeFeature(features.assignmentPressure, 'assignmentPressure'),
+    lessonDifficulty: normalizeFeature(features.lessonDifficulty, 'lessonDifficulty'),
+    contentCoverageGap: normalizeFeature(features.contentCoverageGap, 'contentCoverageGap'),
   };
 
-  // Re-calculate derived rates if needed
-  if (!features.retryRate && f.activitiesAttempted > 0) {
-    f.retryRate = f.attempts / (f.activitiesAttempted + 1);
-  }
-  if (!features.errRate && f.totalAnswers > 0) {
-    f.errRate = f.wrongAnswers / (f.totalAnswers + COGNITIVE_LOAD_DEFAULTS.epsilon);
-  }
-  if (!features.timePressure && f.expectedTime > 0) {
-    f.timePressure = f.timeSpentActive / f.expectedTime;
-  }
-  if (!features.progressRate && f.totalActivities > 0) {
-    f.progressRate = f.completedActivities / (f.totalActivities + COGNITIVE_LOAD_DEFAULTS.epsilon);
-    f.progressGap = 1 - f.progressRate;
-  }
-
-  // Normalization
-  const norm: Record<string, number> = {
-    retryRate: normalizeFeature(f.retryRate, 'retryRate'),
-    errRate: normalizeFeature(f.errRate, 'errRate'),
-    switchRate: normalizeFeature(f.switchRate, 'switchRate'),
-    timePressure: normalizeFeature(f.timePressure, 'timePressure'),
-    progressGap: normalizeFeature(f.progressGap, 'progressGap')
-  };
-
-  // Sigmoid Calculation
-  // Formula from image: CL = σ(β0 + β1·R + β2·E + β3·S + β4·T - β5·P)
+  // Calculate weighted sum: β0 + Σ(βi * Xi)
+  // Note: For Progress, the doc uses β5·LowProgress (which is positive impact on load)
   const x = COGNITIVE_LOAD_DEFAULTS.beta0 +
-            (COGNITIVE_LOAD_DEFAULTS.beta1 * norm.retryRate) +
-            (COGNITIVE_LOAD_DEFAULTS.beta2 * norm.errRate) +
-            (COGNITIVE_LOAD_DEFAULTS.beta3 * norm.switchRate) +
-            (COGNITIVE_LOAD_DEFAULTS.beta4 * norm.timePressure) -
-            (COGNITIVE_LOAD_DEFAULTS.beta5 * norm.progressRate);
+            (COGNITIVE_LOAD_DEFAULTS.beta1 * norm.retryPressure) +
+            (COGNITIVE_LOAD_DEFAULTS.beta2 * norm.errorPressure) +
+            (COGNITIVE_LOAD_DEFAULTS.beta3 * norm.quizTimePressure) +
+            (COGNITIVE_LOAD_DEFAULTS.beta4 * norm.deadlinePressure) +
+            (COGNITIVE_LOAD_DEFAULTS.beta5 * norm.lowProgress) +
+            (COGNITIVE_LOAD_DEFAULTS.beta6 * norm.gradeDrop) +
+            (COGNITIVE_LOAD_DEFAULTS.beta7 * norm.nonCompletionRisk) +
+            (COGNITIVE_LOAD_DEFAULTS.beta8 * norm.assignmentPressure) +
+            (COGNITIVE_LOAD_DEFAULTS.beta9 * norm.lessonDifficulty) +
+            (COGNITIVE_LOAD_DEFAULTS.beta10 * norm.contentCoverageGap);
 
-  const score = sigmoid(x);
+  // Sigmoid activation: 1 / (1 + e^-x)
+  const score = 1 / (1 + Math.exp(-x));
 
-  // Level determination
-  let level: 'Baja' | 'Moderada' | 'Alta' = 'Baja';
-  if (score > 0.66) level = 'Alta';
-  else if (score > 0.33) level = 'Moderada';
-
-  // Confidence scoring
-  const missingSources = [];
-  if (!features.attempts) missingSources.push('mdl_quiz_attempts');
-  if (!features.wrongAnswers) missingSources.push('mdl_question_attempt_steps');
-  if (!features.activitiesAttempted) missingSources.push('mdl_logstore_standard_log');
-  if (!features.completedActivities) missingSources.push('mdl_course_modules_completion');
-  if (!features.expectedTime) missingSources.push('expected_time');
-
-  let confidence: 'Alta' | 'Media' | 'Baja' | 'Insuficiente' = 'Alta';
-  const missingCount = missingSources.length;
-  if (missingCount >= 4) confidence = 'Insuficiente';
-  else if (missingCount >= 3) confidence = 'Baja';
-  else if (missingCount >= 1) confidence = 'Media';
-
-  const warnings = [];
-  if (confidence === 'Insuficiente') {
-    warnings.push('Datos insuficientes para calcular una estimación fiable.');
-  }
-  if (!f.expectedTime) {
-    warnings.push('Tiempo esperado no disponible. Se requiere configuración.');
-  }
+  // Determine confidence level based on data availability
+  const activeFeatures = [
+    features.retryPressure, features.errorPressure, features.quizTimePressure, 
+    features.deadlinePressure, features.lowProgress, features.gradeDrop,
+    features.nonCompletionRisk, features.assignmentPressure, features.lessonDifficulty,
+    features.contentCoverageGap
+  ].filter(v => v !== undefined && v > 0).length;
+  
+  let confidence: 'Alta' | 'Media' | 'Baja' = 'Baja';
+  if (activeFeatures >= 6) confidence = 'Alta';
+  else if (activeFeatures >= 3) confidence = 'Media';
 
   return {
     score,
-    level,
+    level: score > 0.66 ? 'Alta' : score > 0.33 ? 'Moderada' : 'Baja',
     confidence,
-    features: f,
-    normalizedFeatures: norm,
-    missingSources,
-    warnings
+    features: norm,
+    missingSources: [] 
   };
 }
