@@ -172,5 +172,37 @@
         "subtitle": "Tous les signaux utilisés pour estimer votre état",
         "privacyNotice": "Aucune frappe de touche, donnée biométrique ou donnée de webcam n'est jamais collectée. Seuls les modèles d'interaction anonymisés sont utilisés."
     }
-  }
+    },
+    "cognitiveLoad": {
+        "title": "Calcul de la Charge Cognitive Estimée",
+        "description": "Cette métrique estime la charge cognitive de l'étudiant à l'aide des signaux d'interaction, des erreurs, des tentatives, du temps et de la progression obtenus auprès de Moodle. Elle ne doit pas être interprétée como un diagnostic psychologique, mais como un indicateur de support analytique.",
+        "confidence": "Confiance du Calcul",
+        "score": "Score Estimé",
+        "samples": "Échantillons de Données",
+        "activeVariables": "variables actives",
+        "equation": "ÉQUATION PROPOSÉE",
+        "timeWindow": "Estimation par fenêtre temporelle (t)",
+        "sigmoid": "Fonction Sigmoïde",
+        "range": "Plage de Résultats",
+        "variables": "Définition des Variables Clés",
+        "dictionary": "DICTIONNAIRE DES SIGNAUX API",
+        "simulator": "SIMULATEUR DIDACTIQUE",
+        "simulatorDesc": "Ajustement des Signaux Proxies",
+        "simulatorSub": "Simulation basée sur le modèle étendu",
+        "limitations": "Limites et Avertissements",
+        "limitationsDesc": "Ce mode ne dispose pas de signaux de navigation réels. Les signaux tels que 'SwitchRate' ou 'HelpSeeking' sont estimés par des proxies de complétion d'activité et de temps de quiz.",
+        "selectStudent": "Sélectionner un Étudiant :",
+        "noStudent": "Sélectionnez un étudiant pour démarrer l'analyse",
+        "loading": "Consultation de l'API Moodle...",
+        "levels": {
+            "low": "Charge Faible",
+            "moderate": "Charge Modérée",
+            "high": "Charge Élevée"
+        },
+        "confLevels": {
+            "low": "Confiance Faible",
+            "medium": "Confiance Moyenne",
+            "high": "Confiance Élevée"
+        }
+    }
 }

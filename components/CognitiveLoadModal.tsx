@@ -7,7 +7,8 @@ import {
     CheckCircle, XCircle, Calculator, Sliders, ChevronRight,
     Target, Clock, BookOpen, Database, Sparkles, User
 } from 'lucide-react';
-import { calculateCognitiveLoad, COGNITIVE_LOAD_DEFAULTS } from '@/lib/cognitiveLoadService';
+import { calculateCognitiveLoad } from '@/lib/cognitiveLoadService';
+import { useTranslation } from '@/lib/LanguageContext';
 
 interface CognitiveLoadModalProps {
     isOpen: boolean;
@@ -18,6 +19,7 @@ interface CognitiveLoadModalProps {
 }
 
 export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentId, students }: CognitiveLoadModalProps) {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any>(null);
     const [selectedId, setSelectedId] = useState<string | undefined>(studentId);
@@ -77,6 +79,18 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
 
     if (!isOpen) return null;
 
+    const getLevelText = (level: string) => {
+        if (level === 'Alta') return t('cognitiveLoad.levels.high');
+        if (level === 'Moderada') return t('cognitiveLoad.levels.moderate');
+        return t('cognitiveLoad.levels.low');
+    };
+
+    const getConfText = (conf: string) => {
+        if (conf === 'Alta') return t('cognitiveLoad.confLevels.high');
+        if (conf === 'Media') return t('cognitiveLoad.confLevels.medium');
+        return t('cognitiveLoad.confLevels.low');
+    };
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
             <div 
@@ -84,7 +98,7 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                 onClick={onClose}
             />
             
-            <div className="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-300">
+            <div className="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-300 text-slate-800">
                 
                 {/* Header */}
                 <div className="p-8 border-b border-slate-100 flex items-start justify-between bg-slate-50/50">
@@ -93,15 +107,15 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                             <Brain className="w-8 h-8" />
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black text-slate-900">Carga Cognitiva (Modo API-only)</h2>
+                            <h2 className="text-3xl font-black text-slate-900">{t('cognitiveLoad.title')}</h2>
                             <div className="mt-2 flex items-center gap-4">
-                                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Seleccionar Estudiante:</span>
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-400">{t('cognitiveLoad.selectStudent')}</span>
                                 <select 
                                     value={selectedId || ''} 
                                     onChange={(e) => setSelectedId(e.target.value)}
                                     className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                                 >
-                                    <option value="">Seleccione un estudiante...</option>
+                                    <option value="">{t('common.search')}...</option>
                                     {students?.map((s) => (
                                         <option key={s.id} value={s.id}>{s.fullname || s.username}</option>
                                     ))}
@@ -122,12 +136,12 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                     {!selectedId ? (
                         <div className="h-64 flex flex-col items-center justify-center text-slate-400 space-y-4">
                             <User className="w-16 h-16 opacity-20" />
-                            <p className="font-bold text-sm uppercase tracking-widest">Selecciona un estudiante para iniciar el análisis</p>
+                            <p className="font-bold text-sm uppercase tracking-widest text-center px-8">{t('cognitiveLoad.noStudent')}</p>
                         </div>
                     ) : loading ? (
                         <div className="h-64 flex flex-col items-center justify-center text-indigo-400 space-y-4">
                             <Activity className="w-16 h-16 animate-pulse" />
-                            <p className="font-bold text-sm uppercase tracking-widest">Consultando Moodle API...</p>
+                            <p className="font-bold text-sm uppercase tracking-widest">{t('cognitiveLoad.loading')}</p>
                         </div>
                     ) : (
                         <>
@@ -142,8 +156,8 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                                 <div className="flex items-center gap-4">
                                     <Target className="w-6 h-6 opacity-80" />
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">Nivel de Confianza (API)</p>
-                                        <p className="text-lg font-black">{data.confidence} Confianza</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">{t('cognitiveLoad.confidence')}</p>
+                                        <p className="text-lg font-black">{getConfText(data.confidence)}</p>
                                     </div>
                                 </div>
                                 {data.confidence === 'Alta' ? <CheckCircle className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
@@ -152,16 +166,16 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                             <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50 flex items-center gap-4">
                                 <Zap className="w-6 h-6 text-indigo-500" />
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Puntuación Estimada</p>
-                                    <p className="text-lg font-black text-slate-900">{(data.score * 100).toFixed(1)}% ({data.level})</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('cognitiveLoad.score')}</p>
+                                    <p className="text-lg font-black text-slate-900">{(data.score * 100).toFixed(1)}% ({getLevelText(data.level)})</p>
                                 </div>
                             </div>
 
                             <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50 flex items-center gap-4">
                                 <Database className="w-6 h-6 text-cyan-500" />
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Muestras API</p>
-                                    <p className="text-lg font-black text-slate-900">{Object.keys(data.features).filter(k => data.features[k] > 0).length} Señales activas</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('cognitiveLoad.samples')}</p>
+                                    <p className="text-lg font-black text-slate-900">{Object.keys(data.features).filter(k => data.features[k] > 0).length} {t('cognitiveLoad.activeVariables')}</p>
                                 </div>
                             </div>
                         </div>
@@ -171,69 +185,65 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                     <section className="space-y-8">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                <Calculator className="w-4 h-4 text-indigo-400" /> MODELO EXTENDIDO API-ONLY
+                                <Calculator className="w-4 h-4 text-indigo-400" /> {t('cognitiveLoad.equation')}
                             </h3>
-                            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-widest">
-                                <Info className="w-3 h-3" />
-                                Regresión Logística de 10 Variables
-                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div className="bg-indigo-600 rounded-[32px] p-8 text-white shadow-2xl shadow-indigo-200">
-                                <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-6">Fórmula API-only (EduAI)</p>
+                                <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-6">{t('cognitiveLoad.timeWindow')}</p>
                                 <div className="font-mono text-lg lg:text-xl font-black leading-relaxed">
                                     CL = σ(β₀ + β₁·RP + β₂·EP + β₃·TP + β₄·DP + β₅·LP + β₆·GD + ...)
                                 </div>
                                 <div className="mt-8 pt-8 border-t border-white/10 space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-[10px] font-bold text-indigo-200 uppercase">Función de Activación</p>
+                                        <p className="text-[10px] font-bold text-indigo-200 uppercase">{t('cognitiveLoad.sigmoid')}</p>
                                         <p className="font-mono text-sm font-black">σ(x) = 1 / (1 + e⁻ˣ)</p>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <p className="text-[10px] font-bold text-indigo-200 uppercase">Base de Datos</p>
-                                        <p className="font-mono text-sm font-black">Moodle REST Services Only</p>
+                                        <p className="text-[10px] font-bold text-indigo-200 uppercase">{t('cognitiveLoad.range')}</p>
+                                        <p className="font-mono text-sm font-black">0 ≤ CL ≤ 1</p>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="bg-slate-900 rounded-[32px] p-8 text-white shadow-2xl">
-                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-6">Definiciones de Peso (β)</p>
+                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-6">{t('cognitiveLoad.variables')}</p>
                                 <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-mono text-indigo-400">β₁ RetryPressure: 0.8</p>
-                                        <p className="text-[9px] text-slate-500 italic">Reintentos en tests.</p>
+                                        <p className="text-[10px] font-mono text-indigo-400">β₁ RetryPressure</p>
+                                        <p className="text-[9px] text-slate-500 italic">Attempts / (Quizzes + 1)</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-mono text-cyan-400">β₂ ErrorPressure: 1.2</p>
-                                        <p className="text-[9px] text-slate-500 italic">Bajo rendimiento.</p>
+                                        <p className="text-[10px] font-mono text-cyan-400">β₂ ErrorPressure</p>
+                                        <p className="text-[9px] text-slate-500 italic">1 - (Grade / Max)</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-mono text-amber-400">β₄ DeadlinePres: 0.9</p>
-                                        <p className="text-[9px] text-slate-500 italic">Estrés por tiempo.</p>
+                                        <p className="text-[10px] font-mono text-amber-400">β₄ DeadlinePressure</p>
+                                        <p className="text-[9px] text-slate-500 italic">Prox. Deadlines</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-mono text-emerald-400">β₅ LowProgress: 1.1</p>
-                                        <p className="text-[9px] text-slate-500 italic">Falta de avance.</p>
+                                        <p className="text-[10px] font-mono text-emerald-400">β₅ LowProgress</p>
+                                        <p className="text-[9px] text-slate-500 italic">1 - Progress</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    {/* Variables Table */}
+                    {/* Dictionary Table */}
                     <section className="space-y-6">
                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                            <Table className="w-4 h-4 text-cyan-400" /> DICCIONARIO DE SEÑALES API
+                            <Table className="w-4 h-4 text-cyan-400" /> {t('cognitiveLoad.dictionary')}
                         </h3>
                         <div className="bg-white rounded-[32px] border border-slate-100 overflow-hidden shadow-xl shadow-slate-200/50">
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-slate-50 text-[10px] uppercase font-black text-slate-400 tracking-widest">
                                     <tr>
                                         <th className="px-6 py-4">Variable</th>
-                                        <th className="px-6 py-4">Fórmula</th>
-                                        <th className="px-6 py-4">Fuente API</th>
-                                        <th className="px-6 py-4 text-right">Valor</th>
+                                        <th className="px-6 py-4">{t('common.details')}</th>
+                                        <th className="px-6 py-4">Moodle API</th>
+                                        <th className="px-6 py-4 text-right">Value</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 text-xs font-bold text-slate-700">
@@ -263,38 +273,27 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                         <div className="lg:col-span-5 space-y-6">
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                <Sparkles className="w-4 h-4 text-amber-400" /> AVISO MODO API-ONLY
+                                <Sparkles className="w-4 h-4 text-amber-400" /> {t('cognitiveLoad.limitations')}
                             </h3>
                             <div className="bg-slate-900 rounded-[32px] p-8 text-white h-full">
                                 <p className="text-slate-400 text-xs leading-relaxed font-medium">
-                                    Esta estimación usa únicamente los Web Services estándar de Moodle. 
-                                    Las señales de navegación real (cambios entre páginas, revisitas) no están disponibles sin logs directos o base de datos.
+                                    {t('cognitiveLoad.limitationsDesc')}
                                 </p>
-                                <div className="mt-8 space-y-4">
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                                        <p className="text-[10px] font-black uppercase text-indigo-400 mb-1">Confianza Alta</p>
-                                        <p className="text-[10px] text-slate-400">Requiere al menos 6 variables con datos reales.</p>
-                                    </div>
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                                        <p className="text-[10px] font-black uppercase text-amber-400 mb-1">Detección de Riesgo</p>
-                                        <p className="text-[10px] text-slate-400">Se prioriza la cercanía de fechas límite y caídas de notas.</p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
                         <div className="lg:col-span-7 space-y-6">
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                <Sliders className="w-4 h-4 text-indigo-400" /> SIMULADOR API-ONLY
+                                <Sliders className="w-4 h-4 text-indigo-400" /> {t('cognitiveLoad.simulator')}
                             </h3>
                             <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-xl shadow-slate-200/50">
                                 <div className="flex items-center justify-between mb-8">
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Ajuste de señales proxies</p>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t('cognitiveLoad.simulatorDesc')}</p>
                                     <div className="text-right">
                                         <p className="text-3xl font-black text-indigo-600">{(simResult.score * 100).toFixed(1)}%</p>
                                         <p className={`text-[10px] font-black uppercase tracking-widest ${
                                             simResult.level === 'Alta' ? 'text-rose-500' : 'text-emerald-500'
-                                        }`}>{simResult.level}</p>
+                                        }`}>{getLevelText(simResult.level)}</p>
                                     </div>
                                 </div>
                                 <div className="space-y-6">
@@ -323,16 +322,6 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                             </div>
                         </div>
                     </div>
-
-                    <section className="bg-rose-50/50 rounded-[32px] p-8 border border-rose-100/50">
-                        <div className="flex items-center gap-4 mb-4">
-                            <AlertTriangle className="w-6 h-6 text-rose-500" />
-                            <h4 className="text-sm font-black text-rose-900 uppercase tracking-widest">Limitaciones API-only</h4>
-                        </div>
-                        <p className="text-xs text-rose-700 leading-relaxed font-medium">
-                            Este modo no dispone de señales de navegación real. Las señales de "SwitchRate" o "HelpSeeking" son estimadas mediante proxies de actividades completadas y tiempos de cuestionario.
-                        </p>
-                    </section>
                         </>
                     )}
                 </div>

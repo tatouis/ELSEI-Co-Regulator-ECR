@@ -172,5 +172,37 @@
         "subtitle": "All signals used to estimate your state",
         "privacyNotice": "No keystrokes, biometrics, or webcam data are ever collected. Only anonymized interaction patterns are used."
     }
-  }
+    },
+    "cognitiveLoad": {
+        "title": "Estimated Cognitive Load Calculation",
+        "description": "This metric estimates the student's cognitive load using interaction signals, errors, attempts, time, and progress obtained from Moodle. It should not be interpreted as a psychological diagnosis, but as an analytical support indicator.",
+        "confidence": "Calculation Confidence",
+        "score": "Estimated Score",
+        "samples": "Data Samples",
+        "activeVariables": "active variables",
+        "equation": "PROPOSED EQUATION",
+        "timeWindow": "Estimation by time window (t)",
+        "sigmoid": "Sigmoid Function",
+        "range": "Result Range",
+        "variables": "Key Variables Definition",
+        "dictionary": "API SIGNALS DICTIONARY",
+        "simulator": "DIDACTIC SIMULATOR",
+        "simulatorDesc": "Adjusting Proxy Signals",
+        "simulatorSub": "Simulation based on the extended model",
+        "limitations": "Limitations and Warnings",
+        "limitationsDesc": "This mode does not have real navigation signals. Signals such as 'SwitchRate' or 'HelpSeeking' are estimated through activity completion proxies and quiz times.",
+        "selectStudent": "Select Student:",
+        "noStudent": "Select a student to start the analysis",
+        "loading": "Querying Moodle API...",
+        "levels": {
+            "low": "Low Load",
+            "moderate": "Moderate Load",
+            "high": "High Load"
+        },
+        "confLevels": {
+            "low": "Low Confidence",
+            "medium": "Medium Confidence",
+            "high": "High Confidence"
+        }
+    }
 }
