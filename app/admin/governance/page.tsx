@@ -22,29 +22,36 @@ export default function GovernancePage() {
     const [activeTab, setActiveTab] = useState<'students' | 'metadata' | 'audit'>('students');
     const [isCognitiveLoadModalOpen, setIsCognitiveLoadModalOpen] = useState(false);
 
+    const [isRefetching, setIsRefetching] = useState(false);
+
     useEffect(() => {
         fetchGovernanceData();
     }, []);
 
-    const fetchGovernanceData = async () => {
-        setLoading(true);
+    const fetchGovernanceData = async (courseId?: string) => {
+        if (!data) setLoading(true);
+        else setIsRefetching(true);
+        
         try {
-            const res = await fetch('/api/admin/governance');
+            const url = courseId ? `/api/admin/governance?courseId=${courseId}` : '/api/admin/governance';
+            const res = await fetch(url);
             const result = await res.json();
             setData(result);
-            if (result.data?.Courses?.length > 0) {
+            if (!courseId && result.data?.Courses?.length > 0) {
                 setSelectedCourseId(result.data.Courses[0].id.toString());
             }
         } catch (error) {
             console.error('Error fetching governance data:', error);
         } finally {
             setLoading(false);
+            setIsRefetching(false);
         }
     };
 
     const handleCourseChange = (id: string) => {
         setSelectedCourseId(id);
         setSelectedStudent(null);
+        fetchGovernanceData(id);
     };
 
     if (loading) {
@@ -182,7 +189,7 @@ export default function GovernancePage() {
                         )}
 
                         {/* Data Card */}
-                        <div className="bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-indigo-500/5">
+                        <div className={`bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-indigo-500/5 transition-opacity duration-300 ${isRefetching ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
                                     <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
