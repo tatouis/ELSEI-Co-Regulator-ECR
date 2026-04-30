@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { 
     Database, UserCheck, BookOpen, FileCheck, 
     AlertCircle, CheckCircle2, ChevronRight, Activity,
-    Clock, MessageSquare, Target, User, Sparkles, Zap
+    Clock, MessageSquare, Target, User, Sparkles, Zap, Brain
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
-
+import CognitiveLoadModal from '@/components/CognitiveLoadModal';
 import { useTranslation } from '@/lib/LanguageContext';
 
 export default function DataGovernance() {
@@ -19,6 +19,7 @@ export default function DataGovernance() {
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<'students' | 'dictionary' | 'performance'>('students');
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+    const [isCognitiveLoadModalOpen, setIsCognitiveLoadModalOpen] = useState(false);
 
     const toggleCategory = (category: string) => {
         setExpandedCategories(prev => ({
@@ -78,6 +79,13 @@ export default function DataGovernance() {
                     <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-0.5">Endpoint API</p>
                     <p className="text-xs font-mono text-indigo-600 font-bold truncate">{data?.moodleUrl}</p>
                 </div>
+                <button 
+                    onClick={() => setIsCognitiveLoadModalOpen(true)}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+                >
+                    <Brain className="w-4 h-4" />
+                    Ver cálculo de carga cognitiva
+                </button>
             </div>
           </div>
         </header>
@@ -385,6 +393,12 @@ export default function DataGovernance() {
           -webkit-backdrop-filter: blur(20px);
         }
       `}</style>
+      <CognitiveLoadModal 
+        isOpen={isCognitiveLoadModalOpen} 
+        onClose={() => setIsCognitiveLoadModalOpen(false)} 
+        courseId={selectedCourseId || undefined}
+        studentId={selectedStudent?.id?.toString()}
+      />
     </div>
   );
 }

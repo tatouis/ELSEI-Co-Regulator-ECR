@@ -1,0 +1,637 @@
+MISSION PROMPT: Add Cognitive Load Governance Module to the Admin Area
+
+You are working inside an existing Moodle-connected analytics/admin application. The app is already running and already has a Moodle API integration. Your task is to add a new governance feature in the Admin area.
+
+IMPORTANT:
+- First inspect the existing codebase structure, routing, UI components, API clients, state management, styling system, and existing Admin/Governance pages.
+- Do not rewrite the app.
+- Do not break existing routes or components.
+- Reuse the existing design system, layout components, buttons, cards, modals, tables, API service patterns, authentication, and error handling.
+- If some Moodle data is not currently available from the existing Moodle API client, create a clean adapter/service layer and mark the missing field as “not available yet” instead of hardcoding fake data.
+- The UI text should be in Spanish.
+- This feature is for transparency/governance: the admin must be able to understand how the cognitive load score is calculated and which Moodle variables are used.
+
+OBJECTIVE
+
+Add a button inside Admin > Governance called:
+
+“Ver cálculo de carga cognitiva”
+
+When the admin clicks this button, open a modal, drawer, or dedicated page titled:
+
+“Cálculo de carga cognitiva estimada”
+
+This view must explain:
+1. The global formula.
+2. The variables used.
+3. The Moodle data sources/API fields.
+4. The interpretation of the score from 0 to 1.
+5. The current limitations.
+6. A possible improved version of the formula using additional Moodle indicators.
+
+CORE CONCEPT
+
+We estimate the cognitive load of a student u in a temporal window t.
+
+Base equation:
+
+CL(u,t) = σ(β0 + β1·RetryRate(u,t) + β2·ErrRate(u,t) + β3·SwitchRate(u,t) + β4·TimePressure(u,t) + β5·ProgressRate(u,t))
+
+where:
+
+σ(x) = 1 / (1 + e^(-x))
+
+The result CL(u,t) must be between 0 and 1.
+
+Interpretation:
+- 0.00 to 0.33: Carga cognitiva baja
+- 0.34 to 0.66: Carga cognitiva moderada
+- 0.67 to 1.00: Carga cognitiva alta
+
+Very important:
+ProgressRate is a positive learning progress indicator, so it should reduce cognitive load. Therefore, either:
+A) keep ProgressRate in the equation but set β5 as a negative coefficient, or
+B) use ProgressGap = 1 - ProgressRate and use a positive coefficient.
+
+Preferred implementation:
+Use ProgressGap = 1 - ProgressRate for the improved formula, but still show the original formula in the Governance explanation.
+
+BASE VARIABLES TO IMPLEMENT
+
+1. Attempts
+
+Meaning:
+Number of quiz attempts made by the student in the selected time window.
+
+Formula:
+Attempts(u,t) = COUNT(*)
+
+Moodle source:
+- mdl_quiz_attempts
+- API equivalent if available: mod_quiz_get_user_attempts
+
+Useful fields:
+- userid
+- quiz
+- attempt
+- timestart
+- timefinish
+- state
+
+2. ActivitiesAttempted
+
+Meaning:
+Number of distinct activities/pages/resources interacted with by the student in the selected time window.
+
+Formula:
+ActivitiesAttempted(u,t) = COUNT(DISTINCT contextinstanceid)
+
+Moodle source:
+- mdl_logstore_standard_log
+
+Useful fields:
+- userid
+- contextinstanceid
+- timecreated
+- component
+- action
+- target
+- eventname
+- courseid
+
+If the existing Moodle API does not expose logs, create a MoodleLogAdapter interface and show the status as “Fuente pendiente de conectar”.
+
+3. RetryRate
+
+Meaning:
+Repeated attempt pressure. A high retry rate may indicate difficulty, repeated failure, or persistence under cognitive strain.
+
+Formula:
+RetryRate(u,t) = Attempts(u,t) / (ActivitiesAttempted(u,t) + 1)
+
+Use +1 to avoid division by zero.
+
+Source:
+Derived from Attempts and ActivitiesAttempted.
+
+4. WrongAnswers
+
+Meaning:
+Number of wrong answers in quizzes/exercises.
+
+Formula:
+WrongAnswers(u,t) = COUNT(question_attempt_steps where state indicates wrong answer)
+
+Moodle source:
+- mdl_question_attempt_steps
+- Or quiz attempt review data if available through Moodle API.
+
+Useful fields:
+- userid
+- state
+- fraction
+- timecreated
+
+Implementation note:
+If state is available, count states such as “gradedwrong” as wrong.
+If fraction is available, prefer a more nuanced calculation:
+Wrongness = 1 - fraction
+This allows partial credit instead of treating every answer as fully wrong.
+
+5. TotalAnswers
+
+Meaning:
+Total number of answer steps/questions attempted.
+
+Formula:
+TotalAnswers(u,t) = COUNT(*)
+
+Moodle source:
+- mdl_question_attempt_steps
+- Or quiz attempt review data if available.
+
+Useful fields:
+- userid
+- state
+- fraction
+- timecreated
+
+6. ErrRate
+
+Meaning:
+Error rate in quizzes/exercises.
+
+Base formula:
+ErrRate(u,t) = WrongAnswers(u,t) / (TotalAnswers(u,t) + ε)
+
+Use ε = 0.000001 to avoid division by zero.
+
+Improved formula if fraction is available:
+ErrRate(u,t) = AVG(1 - fraction)
+
+7. SwitchRate
+
+Meaning:
+Frequency of switching between pages, resources, activities, quizzes, or course modules.
+
+Formula:
+Given a time-ordered sequence of contextinstanceid values:
+SwitchRate(u,t) = Σ I(context_i ≠ context_i+1) / (n - 1)
+
+Moodle source:
+- mdl_logstore_standard_log
+
+Useful fields:
+- userid
+- contextinstanceid
+- timecreated
+- component
+- action
+- target
+- eventname
+
+Implementation rules:
+- Sort logs by timecreated ascending.
+- Remove duplicate consecutive events with the same contextinstanceid.
+- Ignore system/background events when possible.
+- If n < 2, SwitchRate = 0.
+- Add a data quality warning if logs are missing.
+
+8. TimeSpent
+
+Meaning:
+Estimated time spent by the student during the selected window.
+
+Base formula:
+TimeSpent(u,t) = t_last - t_first
+
+Moodle source:
+- mdl_logstore_standard_log
+
+Useful fields:
+- userid
+- timecreated
+- contextinstanceid
+- component
+
+Important cleanup:
+Raw Moodle logs do not always equal real active learning time. Add an inactivity threshold:
+- Split events into sessions.
+- If the gap between two consecutive events is greater than 30 minutes, treat it as inactivity and do not count the full gap.
+- Make the inactivity threshold configurable in Admin settings.
+
+Better formula:
+TimeSpentActive(u,t) = sum of valid event gaps where gap <= inactivityThresholdMinutes
+
+9. ExpectedTime
+
+Meaning:
+Expected/normal time for the activity or course window.
+
+Possible sources, in order of preference:
+1. Activity configured time limit, for example quiz timelimit.
+2. Due date or expected completion duration if available.
+3. Median active time spent by the cohort on the same activity.
+4. Admin-configured default expected duration.
+
+If not available:
+- Show “Tiempo esperado no disponible”.
+- Do not fake the value.
+
+10. TimePressure
+
+Meaning:
+Pressure caused by spending too long compared with expected time or being close to deadline.
+
+Base formula:
+TimePressure(u,t) = TimeSpentActive(u,t) / ExpectedTime(u,t)
+
+Rules:
+- Clamp or normalize the value to avoid extreme outliers.
+- Example: TimePressureNorm = min(TimePressure, 2) / 2
+- If ExpectedTime is missing, mark confidence lower.
+
+11. CompletedActivities
+
+Meaning:
+Number of completed course activities.
+
+Formula:
+CompletedActivities(u,t) = COUNT(completionstate = 1)
+
+Moodle source:
+- mdl_course_modules_completion
+- API equivalent if available: core_completion_get_activities_completion_status
+
+Useful fields:
+- userid
+- coursemoduleid
+- completionstate
+- timemodified
+
+12. TotalActivities
+
+Meaning:
+Total number of activities/modules in the course.
+
+Formula:
+TotalActivities(u,t) = COUNT(*)
+
+Moodle source:
+- mdl_course_modules
+- API equivalent if available: core_course_get_contents
+
+Useful fields:
+- id
+- course
+- module
+- instance
+- visible
+
+13. ProgressRate
+
+Meaning:
+Effective progress in the activity/course.
+
+Formula:
+ProgressRate(u,t) = CompletedActivities(u,t) / (TotalActivities(u,t) + ε)
+
+Recommended transformation:
+ProgressGap(u,t) = 1 - ProgressRate(u,t)
+
+Use ProgressGap in the improved equation because low progress should increase estimated cognitive load.
+
+IMPROVED FORMULA TO ADD IN THE GOVERNANCE EXPLANATION
+
+Add a second section titled:
+
+“Versión mejorada recomendada”
+
+Improved equation:
+
+CL_improved(u,t) = σ(
+  β0
+  + β1·RetryRate_norm
+  + β2·ErrRate_norm
+  + β3·SwitchRate_norm
+  + β4·TimePressure_norm
+  + β5·ProgressGap_norm
+  + β6·DeadlinePressure_norm
+  + β7·HelpSeekingAfterError_norm
+  + β8·RevisitRate_norm
+  + β9·GradeDrop_norm
+)
+
+Additional optional variables:
+
+A. DeadlinePressure
+
+Meaning:
+The student is close to the deadline or submitted late.
+
+Possible Moodle sources:
+- quiz close time
+- assignment due date
+- module availability dates
+- submission timestamps
+
+Formula idea:
+DeadlinePressure = 1 - normalized time remaining before deadline
+
+If overdue:
+DeadlinePressure = 1
+
+B. HelpSeekingAfterError
+
+Meaning:
+The student opens help resources, forums, feedback, lessons, or pages after wrong answers.
+
+Sources:
+- logstore events after quiz errors
+- forum views/posts
+- resource views
+- feedback views
+
+Formula idea:
+HelpSeekingAfterError = count(help/resource/forum events within X minutes after wrong answer) / number of wrong answer events
+
+C. RevisitRate
+
+Meaning:
+The student repeatedly returns to the same activity/resource, possibly indicating confusion or review effort.
+
+Source:
+- logstore_standard_log contextinstanceid sequence
+
+Formula idea:
+RevisitRate = repeated visits to previously seen contextinstanceid / total visits
+
+D. GradeDrop
+
+Meaning:
+Recent performance is worse than the student’s previous average.
+
+Sources:
+- quiz grades
+- grade_grades
+- quiz attempt review
+
+Formula idea:
+GradeDrop = max(0, previousAverageGrade - recentGrade)
+
+E. HintUsageRate, if hints are available
+
+Meaning:
+Frequent hint usage may indicate difficulty or reliance on support.
+
+Source:
+- question attempt step data if available
+- quiz attempt review if hint events are available
+
+Formula idea:
+HintUsageRate = hintsUsed / totalQuestions
+
+DATA QUALITY AND CONFIDENCE SCORE
+
+Add a confidence indicator to every calculated cognitive load score.
+
+Confidence should depend on:
+- Availability of quiz attempts data.
+- Availability of question steps/error data.
+- Availability of log data.
+- Availability of completion data.
+- Availability of expected time/deadline data.
+- Number of events in the selected time window.
+
+Display:
+- Alta confianza
+- Media confianza
+- Baja confianza
+
+If too many variables are missing, do not show a precise score as if it were reliable. Show:
+“Datos insuficientes para calcular una estimación fiable.”
+
+UI REQUIREMENTS
+
+Inside the Governance cognitive load view, create these sections:
+
+1. Header
+Title:
+“Cálculo de carga cognitiva estimada”
+
+Subtitle:
+“Esta métrica estima la carga cognitiva del estudiante usando señales de interacción, errores, intentos, tiempo y progreso obtenidas desde Moodle. No debe interpretarse como diagnóstico psicológico, sino como indicador analítico de apoyo.”
+
+2. Formula Card
+
+Show the base formula:
+
+CL(u,t) = σ(β0 + β1·RetryRate + β2·ErrRate + β3·SwitchRate + β4·TimePressure + β5·ProgressRate)
+
+Then show:
+
+σ(x) = 1 / (1 + e^(-x))
+
+Add note:
+“El resultado está normalizado entre 0 y 1.”
+
+3. Variable Table
+
+Columns:
+- Variable
+- Qué mide
+- Fórmula
+- Fuente Moodle/API
+- Campos usados
+- Impacto esperado
+- Estado de disponibilidad
+
+Rows:
+- Attempts
+- ActivitiesAttempted
+- RetryRate
+- WrongAnswers
+- TotalAnswers
+- ErrRate
+- SwitchRate
+- TimeSpent
+- TimePressure
+- CompletedActivities
+- TotalActivities
+- ProgressRate
+- ProgressGap
+- Cognitive Load
+
+4. Data Sources Card
+
+Group the sources:
+
+Quiz attempts:
+- mdl_quiz_attempts
+- mod_quiz_get_user_attempts
+
+Question errors:
+- mdl_question_attempt_steps
+- quiz attempt review data if available
+
+Navigation/logs:
+- mdl_logstore_standard_log
+- custom Moodle log API if needed
+
+Completion:
+- mdl_course_modules_completion
+- core_completion_get_activities_completion_status
+
+Grades:
+- mdl_grade_grades
+- gradereport_user_get_grades_table or core_grades_get_grades if available
+
+5. Improved Calculation Card
+
+Show the improved formula and explain why the following variables improve the model:
+- ProgressGap instead of raw ProgressRate.
+- DeadlinePressure.
+- HelpSeekingAfterError.
+- RevisitRate.
+- GradeDrop.
+- HintUsageRate if available.
+
+6. Limitations Card
+
+Text:
+“La carga cognitiva se estima a partir de trazas de interacción. Algunos comportamientos pueden tener múltiples interpretaciones: mucho tiempo en una actividad puede indicar dificultad, reflexión profunda o simplemente inactividad. Por eso el cálculo incluye reglas de limpieza temporal, normalización y un nivel de confianza.”
+
+7. Optional Simulator
+
+If easy to implement:
+Add a small simulator where the admin can modify example values:
+- RetryRate
+- ErrRate
+- SwitchRate
+- TimePressure
+- ProgressRate or ProgressGap
+
+Then show the resulting CL score.
+
+This simulator is only educational and must not modify real student data.
+
+BACKEND / SERVICE REQUIREMENTS
+
+Create or extend a service called something like:
+
+cognitiveLoadService
+
+It should expose:
+
+calculateCognitiveLoad({
+  userId,
+  courseId,
+  activityId?,
+  windowStart,
+  windowEnd
+})
+
+Return object:
+
+{
+  userId,
+  courseId,
+  activityId,
+  windowStart,
+  windowEnd,
+  score,
+  level,
+  confidence,
+  formulaVersion,
+  features: {
+    attempts,
+    activitiesAttempted,
+    retryRate,
+    wrongAnswers,
+    totalAnswers,
+    errRate,
+    switchRate,
+    timeSpentActive,
+    expectedTime,
+    timePressure,
+    completedActivities,
+    totalActivities,
+    progressRate,
+    progressGap,
+    deadlinePressure,
+    helpSeekingAfterError,
+    revisitRate,
+    gradeDrop,
+    hintUsageRate
+  },
+  normalizedFeatures: {...},
+  missingSources: [],
+  warnings: [],
+  explanation: []
+}
+
+NORMALIZATION REQUIREMENTS
+
+Avoid using raw counts directly in the sigmoid if they can grow indefinitely.
+
+Implement normalization:
+- For rates already between 0 and 1, keep them as is.
+- For count-based variables, normalize by cohort percentile, activity median, or configurable max.
+- Clamp extreme values.
+- Add comments explaining the normalization method.
+
+If cohort statistics are not available yet, create a placeholder method:
+normalizeFeature(value, featureName, context)
+
+and document that cohort-based normalization should be connected later.
+
+CONFIGURATION REQUIREMENTS
+
+Add an admin configuration object for:
+- beta coefficients
+- inactivity threshold minutes, default 30
+- default expected time fallback
+- formula version: “base” or “improved”
+- enabled/disabled state
+- minimum data confidence threshold
+
+Do not hardcode scientific coefficients as final truth.
+If default coefficients are needed, mark them as “heuristic defaults” and make them editable/configurable.
+
+PRIVACY / GOVERNANCE REQUIREMENTS
+
+Add a privacy note:
+- Do not expose individual sensitive details beyond authorized admins/teachers.
+- Do not label students as incapable or diagnose them.
+- Use the score as an early-warning/support indicator.
+- Show the exact variables used so the calculation is explainable.
+
+ACCEPTANCE CRITERIA
+
+1. Admin > Governance contains a new button “Ver cálculo de carga cognitiva”.
+2. Clicking the button opens a clear explanation of the formula.
+3. The base formula and sigmoid are visible.
+4. The variables table is visible.
+5. Moodle sources and fields are visible.
+6. Missing Moodle data sources are clearly marked.
+7. The improved formula recommendation is shown.
+8. The service layer for cognitive load calculation exists.
+9. The calculation handles division by zero.
+10. The calculation handles missing data.
+11. The calculation includes a confidence level.
+12. The UI is responsive and follows the existing app design.
+13. Existing app functionality remains unchanged.
+14. Add tests where the project already uses tests.
+
+IMPLEMENTATION ORDER
+
+1. Inspect project structure.
+2. Locate Admin/Governance page.
+3. Add button and modal/drawer/page.
+4. Add static governance explanation first.
+5. Add cognitiveLoadService with formulas and types.
+6. Connect available Moodle API fields.
+7. Mark unavailable sources as pending instead of faking data.
+8. Add improved formula section.
+9. Add confidence and warnings.
+10. Run lint/tests/build and fix errors.
