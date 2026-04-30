@@ -89,11 +89,13 @@ export default function GovernancePage() {
                     
                     <div className="flex flex-col sm:flex-row gap-6 items-center">
                         <div className="flex flex-col items-end">
-                            <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
-                                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">API Connected</span>
+                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${data?.moodleStatus === 'connected' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
+                                <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse ${data?.moodleStatus === 'connected' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]'}`} />
+                                <span className={`text-[9px] font-black uppercase tracking-widest ${data?.moodleStatus === 'connected' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                    {data?.moodleStatus === 'connected' ? 'API Connected' : 'API Error'}
+                                </span>
                             </div>
-                            <p className="text-[10px] font-mono text-slate-400 mt-2">{data?.moodleUrl}</p>
+                            <p className="text-[10px] font-mono text-slate-400 mt-2">{data?.moodleUrl || 'Timeout / Unavailable'}</p>
                         </div>
                         <button 
                             onClick={() => setIsCognitiveLoadModalOpen(true)}
@@ -120,9 +122,10 @@ export default function GovernancePage() {
                     />
                     <StatCard 
                         title="Moodle API" 
-                        value="Connected" 
-                        icon={<Zap className="w-5 h-5 text-emerald-600" />} 
-                        isSuccess
+                        value={data?.moodleStatus === 'connected' ? "Connected" : "Timeout"} 
+                        icon={data?.moodleStatus === 'connected' ? <Zap className="w-5 h-5 text-emerald-600" /> : <AlertTriangle className="w-5 h-5 text-red-600" />} 
+                        isSuccess={data?.moodleStatus === 'connected'}
+                        isError={data?.moodleStatus !== 'connected'}
                     />
                     <StatCard 
                         title="Security Layer" 
@@ -245,11 +248,17 @@ export default function GovernancePage() {
                                             <tr>
                                                 <td colSpan={4} className="px-10 py-40 text-center">
                                                     <div className="max-w-xs mx-auto space-y-4">
-                                                        <div className="w-20 h-20 rounded-[2rem] bg-emerald-50 flex items-center justify-center mx-auto text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                                                            <Zap className="w-8 h-8" />
+                                                        <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto ${data?.moodleStatus === 'connected' ? 'bg-emerald-50 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'bg-red-50 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]'}`}>
+                                                            {data?.moodleStatus === 'connected' ? <Zap className="w-8 h-8" /> : <AlertTriangle className="w-8 h-8" />}
                                                         </div>
-                                                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">API is Connected</h4>
-                                                        <p className="text-xs text-slate-400 font-medium leading-relaxed">The connection to Moodle is active, but there are no enrolled students to analyze in this course.</p>
+                                                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">
+                                                            {data?.moodleStatus === 'connected' ? 'API is Connected' : 'API Connection Failed'}
+                                                        </h4>
+                                                        <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                                                            {data?.moodleStatus === 'connected' 
+                                                                ? 'The connection to Moodle is active, but there are no enrolled students to analyze in this course.'
+                                                                : 'The Moodle instance took too long to respond or returned an error. This usually happens with large instances on Vercel deployments.'}
+                                                        </p>
                                                     </div>
                                                 </td>
                                             </tr>

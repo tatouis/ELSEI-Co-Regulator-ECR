@@ -179,8 +179,7 @@ export async function GET(request: Request) {
         } catch (e) { console.warn('Could not fetch overview grades', e); }
 
         // 7. Performance & ECR Intelligence
-        const students = [];
-        for (const mStudent of moodleStudents.slice(0, 15)) {
+        const students = await Promise.all(moodleStudents.slice(0, 15).map(async (mStudent: any) => {
           const ecrUser = await prisma.user.findFirst({
             where: { OR: [{ username: mStudent.username }, { displayName: mStudent.fullname }] },
             select: { id: true }
@@ -212,14 +211,14 @@ export async function GET(request: Request) {
             }
           } catch (e) { console.warn(`Could not fetch completion for user ${mStudent.id}`); }
 
-          students.push({
+          return {
             ...mStudent,
             interactionTimeMinutes: Math.round((pulseCount * 10) / 60),
             totalInterventions: interventionCount,
             activityLogs: recentLogs,
             completion: completionStatus
-          });
-        }
+          };
+        }));
         sampleData.Students = students;
 
         // 8. Grade-level metadata
