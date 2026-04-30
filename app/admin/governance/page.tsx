@@ -170,13 +170,9 @@ export default function GovernancePage() {
                                     </div>
                                     <h2 className="text-3xl font-black mb-8 max-w-2xl leading-tight">{currentCourse.fullname}</h2>
                                     <div className="flex items-center gap-4">
-                                        <button 
-                                            onClick={fetchGovernanceData}
-                                            className="px-8 py-3.5 rounded-2xl bg-white text-indigo-600 text-xs font-black uppercase tracking-widest hover:bg-indigo-50 transition-all flex items-center gap-3"
-                                        >
-                                            <RefreshCcw className="w-4 h-4" />
-                                            Synchronize Data
-                                        </button>
+                                        <div className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-[10px] font-black uppercase tracking-widest">
+                                            Auto-sync Active
+                                        </div>
                                     </div>
                                 </div>
                             </div>
