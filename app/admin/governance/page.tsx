@@ -23,6 +23,14 @@ export default function GovernancePage() {
     const [isCognitiveLoadModalOpen, setIsCognitiveLoadModalOpen] = useState(false);
 
     const [isRefetching, setIsRefetching] = useState(false);
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+    const toggleCategory = (category: string) => {
+        setExpandedCategories(prev => ({
+            ...prev,
+            [category]: prev[category] === false ? true : false
+        }));
+    };
 
     useEffect(() => {
         fetchGovernanceData();
@@ -192,35 +200,48 @@ export default function GovernancePage() {
                                     </p>
                                 </div>
                                 <div className="space-y-6">
-                                    {data?.data?.Dictionary && Object.entries(data.data.Dictionary).map(([category, fields]: [any, any]) => (
+                                    {data?.data?.Dictionary && Object.entries(data.data.Dictionary).map(([category, fields]: [any, any]) => {
+                                        const isExpanded = expandedCategories[category] !== false; // defaults to true
+                                        return (
                                         <div key={category} className="space-y-4 bg-slate-50 border border-slate-100 rounded-[2rem] p-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-indigo-600 shadow-sm">
-                                                    <Database className="w-5 h-5" />
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-800">{category}</h4>
-                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{Object.keys(fields).length} keys</span>
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200/50">
-                                                {Object.entries(fields).map(([key, info]: [any, any]) => (
-                                                    <div key={key} className="p-5 rounded-[1.5rem] bg-white border border-slate-100 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all">
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <span className="font-mono text-xs font-black text-indigo-700">{key}</span>
-                                                            <span className="text-[9px] font-black px-2 py-1 rounded-xl bg-slate-100 text-slate-500 uppercase tracking-widest">{info.type}</span>
-                                                        </div>
-                                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-3 truncate">SRC: {info.source}</p>
-                                                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 font-mono text-[10px] text-slate-600 max-h-24 overflow-y-auto custom-scrollbar">
-                                                            {info.example !== null && info.example !== undefined 
-                                                                ? (typeof info.example === 'object' ? JSON.stringify(info.example).substring(0, 100) : String(info.example))
-                                                                : <span className="italic text-slate-400">null</span>}
-                                                        </div>
+                                            <button 
+                                                onClick={() => toggleCategory(category)}
+                                                className="w-full flex items-center justify-between group cursor-pointer transition-all active:scale-[0.99]"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-indigo-600 shadow-sm">
+                                                        <Database className="w-5 h-5" />
                                                     </div>
-                                                ))}
-                                            </div>
+                                                    <div className="text-left">
+                                                        <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-800">{category}</h4>
+                                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{Object.keys(fields).length} keys</span>
+                                                    </div>
+                                                </div>
+                                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-slate-100 group-hover:bg-indigo-50 transition-colors">
+                                                    <ChevronRight className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-indigo-600' : 'rotate-0 text-slate-400 group-hover:text-indigo-500'}`} />
+                                                </div>
+                                            </button>
+                                            
+                                            {isExpanded && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200/50 animate-in fade-in slide-in-from-top-4 duration-300">
+                                                    {Object.entries(fields).map(([key, info]: [any, any]) => (
+                                                        <div key={key} className="p-5 rounded-[1.5rem] bg-white border border-slate-100 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="font-mono text-xs font-black text-indigo-700">{key}</span>
+                                                                <span className="text-[9px] font-black px-2 py-1 rounded-xl bg-slate-100 text-slate-500 uppercase tracking-widest">{info.type}</span>
+                                                            </div>
+                                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-3 truncate">SRC: {info.source}</p>
+                                                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 font-mono text-[10px] text-slate-600 max-h-24 overflow-y-auto custom-scrollbar">
+                                                                {info.example !== null && info.example !== undefined 
+                                                                    ? (typeof info.example === 'object' ? JSON.stringify(info.example).substring(0, 100) : String(info.example))
+                                                                    : <span className="italic text-slate-400">null</span>}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
+                                    )})}
                                 </div>
                             </div>
                         )}
