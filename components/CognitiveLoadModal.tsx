@@ -81,14 +81,14 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
     if (!isOpen) return null;
 
     const getLevelText = (level: string) => {
-        if (level === 'Alta') return t('cognitiveLoad.levels.high');
-        if (level === 'Moderada') return t('cognitiveLoad.levels.moderate');
+        if (level === 'High' || level === 'Alta') return t('cognitiveLoad.levels.high');
+        if (level === 'Moderate' || level === 'Moderada') return t('cognitiveLoad.levels.moderate');
         return t('cognitiveLoad.levels.low');
     };
 
     const getConfText = (conf: string) => {
-        if (conf === 'Alta') return t('cognitiveLoad.confLevels.high');
-        if (conf === 'Media') return t('cognitiveLoad.confLevels.medium');
+        if (conf === 'High' || conf === 'Alta') return t('cognitiveLoad.confLevels.high');
+        if (conf === 'Medium' || conf === 'Media') return t('cognitiveLoad.confLevels.medium');
         return t('cognitiveLoad.confLevels.low');
     };
 
@@ -158,7 +158,7 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                                 </div>
                             </div>
                             <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">{t('cognitiveLoad.noStudent')}</h3>
-                            <p className="text-slate-400 font-medium max-w-sm text-center leading-relaxed">Selecciona un alumno del menú superior para sincronizar las señales de Moodle.</p>
+                            <p className="text-slate-400 font-medium max-w-sm text-center leading-relaxed">Select a student from the top menu to sync Moodle signals.</p>
                         </div>
                     ) : loading ? (
                         <div className="h-[400px] flex flex-col items-center justify-center">
@@ -174,8 +174,8 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                     {data && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             <div className={`group p-8 rounded-[40px] border transition-all relative overflow-hidden ${
-                                data.confidence === 'Alta' ? 'bg-emerald-50 border-emerald-100 text-emerald-900 shadow-xl shadow-emerald-100/50' :
-                                data.confidence === 'Media' ? 'bg-amber-50 border-amber-100 text-amber-900 shadow-xl shadow-amber-100/50' :
+                                data.confidence === 'High' || data.confidence === 'Alta' ? 'bg-emerald-50 border-emerald-100 text-emerald-900 shadow-xl shadow-emerald-100/50' :
+                                data.confidence === 'Medium' || data.confidence === 'Media' ? 'bg-amber-50 border-amber-100 text-amber-900 shadow-xl shadow-amber-100/50' :
                                 'bg-rose-50 border-rose-100 text-rose-900 shadow-xl shadow-rose-100/50'
                             }`}>
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 blur-3xl -mr-16 -mt-16 rounded-full" />
@@ -209,7 +209,7 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                                             <span className="text-2xl font-black text-indigo-500">%</span>
                                         </div>
                                         <p className={`text-xs font-black uppercase tracking-widest mt-2 ${
-                                            data.level === 'Alta' ? 'text-rose-400' : 'text-emerald-400'
+                                            data.level === 'High' || data.level === 'Alta' ? 'text-rose-400' : 'text-emerald-400'
                                         }`}>{getLevelText(data.level)}</p>
                                     </div>
                                 </div>

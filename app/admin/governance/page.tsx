@@ -162,7 +162,71 @@ export default function GovernancePage() {
 
                     {/* Main Content Area */}
                     <div className="lg:col-span-8 space-y-8">
-                        {/* Data Card */}
+
+                        {/* Tabs */}
+                        <div className="flex flex-wrap gap-4">
+                            {['students', 'metadata'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab as any)}
+                                    className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                        activeTab === tab 
+                                        ? 'bg-slate-900 text-white shadow-xl' 
+                                        : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100 hover:border-slate-200'
+                                    }`}
+                                >
+                                    {tab === 'metadata' ? 'Data Dictionary' : 'Students List'}
+                                </button>
+                            ))}
+                        </div>
+
+                        {activeTab === 'metadata' && (
+                            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-2xl shadow-indigo-500/5 transition-opacity duration-300">
+                                <div className="mb-8 border-b border-slate-100 pb-8">
+                                    <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
+                                        <Database className="w-6 h-6 text-indigo-600" />
+                                        Live Metadata Discovery
+                                    </h3>
+                                    <p className="text-sm font-medium text-slate-500 mt-2">
+                                        Every field found in the current course API response is mapped here for transparency.
+                                    </p>
+                                </div>
+                                <div className="space-y-6">
+                                    {data?.data?.Dictionary && Object.entries(data.data.Dictionary).map(([category, fields]: [any, any]) => (
+                                        <div key={category} className="space-y-4 bg-slate-50 border border-slate-100 rounded-[2rem] p-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-indigo-600 shadow-sm">
+                                                    <Database className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-800">{category}</h4>
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{Object.keys(fields).length} keys</span>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200/50">
+                                                {Object.entries(fields).map(([key, info]: [any, any]) => (
+                                                    <div key={key} className="p-5 rounded-[1.5rem] bg-white border border-slate-100 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="font-mono text-xs font-black text-indigo-700">{key}</span>
+                                                            <span className="text-[9px] font-black px-2 py-1 rounded-xl bg-slate-100 text-slate-500 uppercase tracking-widest">{info.type}</span>
+                                                        </div>
+                                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-3 truncate">SRC: {info.source}</p>
+                                                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 font-mono text-[10px] text-slate-600 max-h-24 overflow-y-auto custom-scrollbar">
+                                                            {info.example !== null && info.example !== undefined 
+                                                                ? (typeof info.example === 'object' ? JSON.stringify(info.example).substring(0, 100) : String(info.example))
+                                                                : <span className="italic text-slate-400">null</span>}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Data Card (Students View) */}
+                        {activeTab === 'students' && (
                         <div className={`bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-indigo-500/5 transition-opacity duration-300 ${isRefetching ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                             
                             {/* Card Header with Title and Button */}
@@ -259,6 +323,7 @@ export default function GovernancePage() {
                                 </table>
                             </div>
                         </div>
+                        )}
                     </div>
                 </div>
             </div>

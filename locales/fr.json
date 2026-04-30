@@ -175,7 +175,7 @@
     },
     "cognitiveLoad": {
         "title": "Calcul de la Charge Cognitive Estimée",
-        "description": "Cette métrique estime la charge cognitive de l'étudiant à l'aide des signaux d'interaction, des erreurs, des tentatives, du temps et de la progression obtenus auprès de Moodle. Elle ne doit pas être interprétée como un diagnostic psychologique, mais como un indicateur de support analytique.",
+        "description": "Cette métrique estime la charge cognitive de l'étudiant à l'aide des signaux d'interaction, des erreurs, des tentatives, du temps et de la progression obtenus auprès de Moodle. Elle ne doit pas être interprétée comme un diagnostic psychologique, mais comme un indicateur de support analytique.",
         "confidence": "Confiance du Calcul",
         "score": "Score Estimé",
         "samples": "Échantillons de Données",

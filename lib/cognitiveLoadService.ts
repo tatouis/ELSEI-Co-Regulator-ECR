@@ -105,13 +105,13 @@ export function calculateCognitiveLoad(features: CognitiveLoadFeatures) {
     features.contentCoverageGap
   ].filter(v => v !== undefined && v > 0).length;
   
-  let confidence: 'Alta' | 'Media' | 'Baja' = 'Baja';
-  if (activeFeatures >= 6) confidence = 'Alta';
-  else if (activeFeatures >= 3) confidence = 'Media';
+  let confidence: 'High' | 'Medium' | 'Low' = 'Low';
+  if (activeFeatures >= 6) confidence = 'High';
+  else if (activeFeatures >= 3) confidence = 'Medium';
 
   return {
     score,
-    level: score > 0.66 ? 'Alta' : score > 0.33 ? 'Moderada' : 'Baja',
+    level: score > 0.66 ? 'High' : score > 0.33 ? 'Moderate' : 'Low',
     confidence,
     features: norm,
     missingSources: [] 
