@@ -79,13 +79,15 @@ export default function DataGovernance() {
                     <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-0.5">Endpoint API</p>
                     <p className="text-xs font-mono text-indigo-600 font-bold truncate">{data?.moodleUrl}</p>
                 </div>
-                <button 
-                    onClick={() => setIsCognitiveLoadModalOpen(true)}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
-                >
-                    <Brain className="w-4 h-4" />
-                    Ver cálculo de carga cognitiva
-                </button>
+                {selectedCourseId && (
+                    <button 
+                        onClick={() => setIsCognitiveLoadModalOpen(true)}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+                    >
+                        <Brain className="w-4 h-4" />
+                        Ver cálculo de carga cognitiva
+                    </button>
+                )}
             </div>
           </div>
         </header>
@@ -398,6 +400,7 @@ export default function DataGovernance() {
         onClose={() => setIsCognitiveLoadModalOpen(false)} 
         courseId={selectedCourseId || undefined}
         studentId={selectedStudent?.id?.toString()}
+        students={data?.data.Students}
       />
     </div>
   );

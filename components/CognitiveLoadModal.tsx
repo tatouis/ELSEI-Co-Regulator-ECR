@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Brain, Info, Table, Activity, Zap, AlertTriangle, 
     CheckCircle, XCircle, Calculator, Sliders, ChevronRight,
-    Target, Clock, BookOpen, Database, Sparkles
+    Target, Clock, BookOpen, Database, Sparkles, User
 } from 'lucide-react';
 import { calculateCognitiveLoad, COGNITIVE_LOAD_DEFAULTS } from '@/lib/cognitiveLoadService';
 
@@ -14,11 +14,13 @@ interface CognitiveLoadModalProps {
     onClose: () => void;
     courseId?: string;
     studentId?: string;
+    students?: any[];
 }
 
-export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentId }: CognitiveLoadModalProps) {
+export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentId, students }: CognitiveLoadModalProps) {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any>(null);
+    const [selectedId, setSelectedId] = useState<string | undefined>(studentId);
     const [simValues, setSimValues] = useState({
         retryRate: 0.2,
         errRate: 0.15,
@@ -32,19 +34,25 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
         errRate: simValues.errRate,
         switchRate: simValues.switchRate,
         timePressure: simValues.timePressure,
-        progressRate: 1 - simValues.progressGap // Sync progressRate from progressGap
+        progressRate: 1 - simValues.progressGap 
     });
 
     useEffect(() => {
-        if (isOpen) {
-            fetchData();
-        }
-    }, [isOpen, courseId, studentId]);
+        setSelectedId(studentId);
+    }, [studentId]);
 
-    const fetchData = async () => {
+    useEffect(() => {
+        if (isOpen && courseId && selectedId) {
+            fetchData(selectedId);
+        } else if (isOpen && !selectedId) {
+            setData(null);
+        }
+    }, [isOpen, courseId, selectedId]);
+
+    const fetchData = async (sId: string) => {
         setLoading(true);
         try {
-            const url = `/api/admin/governance/cognitive-load?${courseId ? `courseId=${courseId}` : ''}${studentId ? `&userId=${studentId}` : ''}`;
+            const url = `/api/admin/governance/cognitive-load?courseId=${courseId}&userId=${sId}`;
             const res = await fetch(url);
             const result = await res.json();
             setData(result);
@@ -84,11 +92,20 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                             <Brain className="w-8 h-8" />
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black text-slate-900">Cálculo de Carga Cognitiva Estimada</h2>
-                            <p className="text-slate-500 font-medium mt-1 max-w-2xl text-sm leading-relaxed">
-                                Esta métrica estima la carga cognitiva del estudiante usando señales de interacción, errores, intentos, tiempo y progreso obtenidas desde Moodle. 
-                                No debe interpretarse como diagnóstico psicológico, sino como indicador analítico de apoyo.
-                            </p>
+                            <h2 className="text-3xl font-black text-slate-900">Cálculo de Carga Cognitiva</h2>
+                            <div className="mt-2 flex items-center gap-4">
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Seleccionar Estudiante:</span>
+                                <select 
+                                    value={selectedId || ''} 
+                                    onChange={(e) => setSelectedId(e.target.value)}
+                                    className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                >
+                                    <option value="">Seleccione un estudiante...</option>
+                                    {students?.map((s) => (
+                                        <option key={s.id} value={s.id}>{s.fullname || s.username}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <button 
@@ -101,6 +118,18 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
 
                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-12">
                     
+                    {!selectedId ? (
+                        <div className="h-64 flex flex-col items-center justify-center text-slate-400 space-y-4">
+                            <User className="w-16 h-16 opacity-20" />
+                            <p className="font-bold text-sm uppercase tracking-widest">Selecciona un estudiante para ver su carga cognitiva</p>
+                        </div>
+                    ) : loading ? (
+                        <div className="h-64 flex flex-col items-center justify-center text-indigo-400 space-y-4">
+                            <Activity className="w-16 h-16 animate-pulse" />
+                            <p className="font-bold text-sm uppercase tracking-widest">Calculando métricas en tiempo real...</p>
+                        </div>
+                    ) : (
+                        <>
                     {/* Confidence & Quick Stats */}
                     {data && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -352,6 +381,8 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                             Por eso el cálculo incluye reglas de limpieza temporal, normalización y un nivel de confianza basado en la disponibilidad de datos.
                         </p>
                     </section>
+                        </>
+                    )}
 
                 </div>
             </div>
