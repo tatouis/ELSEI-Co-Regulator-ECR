@@ -80,10 +80,13 @@ export default function GovernancePage() {
                         </p>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row gap-4 items-center">
-                        <div className="flex flex-col items-end mr-2">
-                            <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{t('admin.governance.moodleExplorer')}</p>
-                            <p className="text-[10px] font-mono text-slate-400">{data?.moodleUrl}</p>
+                    <div className="flex flex-col sm:flex-row gap-6 items-center">
+                        <div className="flex flex-col items-end">
+                            <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
+                                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">API Connected</span>
+                            </div>
+                            <p className="text-[10px] font-mono text-slate-400 mt-2">{data?.moodleUrl}</p>
                         </div>
                         <button 
                             onClick={() => setIsCognitiveLoadModalOpen(true)}
@@ -178,106 +181,75 @@ export default function GovernancePage() {
                             </div>
                         )}
 
-                        {/* Navigation Tabs */}
-                        <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-full w-fit">
-                            {(['students', 'metadata', 'audit'] as const).map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-                                        activeTab === tab 
-                                        ? 'bg-white text-indigo-600 shadow-md' 
-                                        : 'text-slate-400 hover:text-slate-600'
-                                    }`}
-                                >
-                                    {t(`admin.governance.tabs.${tab}`)}
-                                </button>
-                            ))}
-                        </div>
-
                         {/* Data Card */}
                         <div className="bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-indigo-500/5">
-                            {activeTab === 'students' && (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
-                                            <tr>
-                                                <th className="px-10 py-6">{t('admin.governance.studentTable.name')}</th>
-                                                <th className="px-10 py-6 text-center">{t('admin.governance.studentTable.grades')}</th>
-                                                <th className="px-10 py-6 text-center">{t('admin.governance.studentTable.time')}</th>
-                                                <th className="px-10 py-6 text-right">{t('common.actions')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50">
-                                            {data?.data?.Students?.length > 0 ? (
-                                                data.data.Students.map((student: any) => (
-                                                    <tr key={student.id} className="group hover:bg-indigo-50/30 transition-all">
-                                                        <td className="px-10 py-7">
-                                                            <div className="flex items-center gap-5">
-                                                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black border border-indigo-100 group-hover:bg-white transition-all">
-                                                                    {student.fullname?.charAt(0)}
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-sm font-black text-slate-800">{student.fullname}</p>
-                                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">UID: {student.id}</p>
-                                                                </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
+                                        <tr>
+                                            <th className="px-10 py-6">{t('admin.governance.studentTable.name')}</th>
+                                            <th className="px-10 py-6 text-center">{t('admin.governance.studentTable.grades')}</th>
+                                            <th className="px-10 py-6 text-center">{t('admin.governance.studentTable.time')}</th>
+                                            <th className="px-10 py-6 text-right">{t('common.actions')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {data?.data?.Students?.length > 0 ? (
+                                            data.data.Students.map((student: any) => (
+                                                <tr key={student.id} className="group hover:bg-indigo-50/30 transition-all">
+                                                    <td className="px-10 py-7">
+                                                        <div className="flex items-center gap-5">
+                                                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black border border-indigo-100 group-hover:bg-white transition-all">
+                                                                {student.fullname?.charAt(0)}
                                                             </div>
-                                                        </td>
-                                                        <td className="px-10 py-7 text-center">
-                                                            <div className="flex items-center justify-center gap-3">
-                                                                <div className="h-2 w-16 bg-slate-100 rounded-full overflow-hidden">
-                                                                    <div className="h-full bg-emerald-500" style={{ width: '70%' }} />
-                                                                </div>
-                                                                <span className="text-xs font-black text-slate-600">7.5</span>
+                                                            <div>
+                                                                <p className="text-sm font-black text-slate-800">{student.fullname}</p>
+                                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">UID: {student.id}</p>
                                                             </div>
-                                                        </td>
-                                                        <td className="px-10 py-7 text-center">
-                                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-tight">
-                                                                <Clock className="w-3 h-3" /> 120m
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-10 py-7 text-right">
-                                                            <button 
-                                                                onClick={() => {
-                                                                    setSelectedStudent(student);
-                                                                    setIsCognitiveLoadModalOpen(true);
-                                                                }}
-                                                                className="inline-flex items-center justify-center p-3.5 rounded-2xl bg-slate-50 text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm hover:shadow-lg active:scale-90"
-                                                            >
-                                                                <Brain className="w-5 h-5" />
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan={4} className="px-10 py-40 text-center">
-                                                        <div className="max-w-xs mx-auto space-y-4">
-                                                            <div className="w-20 h-20 rounded-[2rem] bg-slate-50 flex items-center justify-center mx-auto text-slate-200">
-                                                                <Users className="w-10 h-10" />
-                                                            </div>
-                                                            <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">No students found</h4>
-                                                            <p className="text-xs text-slate-400 font-medium leading-relaxed">There are no registered students for this course in the Moodle instance.</p>
                                                         </div>
                                                     </td>
+                                                    <td className="px-10 py-7 text-center">
+                                                        <div className="flex items-center justify-center gap-3">
+                                                            <div className="h-2 w-16 bg-slate-100 rounded-full overflow-hidden">
+                                                                <div className="h-full bg-emerald-500" style={{ width: '70%' }} />
+                                                            </div>
+                                                            <span className="text-xs font-black text-slate-600">7.5</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-10 py-7 text-center">
+                                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-tight">
+                                                            <Clock className="w-3 h-3" /> 120m
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-10 py-7 text-right">
+                                                        <button 
+                                                            onClick={() => {
+                                                                setSelectedStudent(student);
+                                                                setIsCognitiveLoadModalOpen(true);
+                                                            }}
+                                                            className="inline-flex items-center justify-center p-3.5 rounded-2xl bg-slate-50 text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm hover:shadow-lg active:scale-90"
+                                                        >
+                                                            <Brain className="w-5 h-5" />
+                                                        </button>
+                                                    </td>
                                                 </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-
-                            {activeTab === 'metadata' && (
-                                <div className="p-20 text-center space-y-6">
-                                    <div className="w-24 h-24 rounded-[3rem] bg-slate-50 flex items-center justify-center mx-auto text-slate-200">
-                                        <Database className="w-10 h-10" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h4 className="text-lg font-black text-slate-900 uppercase tracking-widest">{t('common.soon')}</h4>
-                                        <p className="text-sm text-slate-400 font-medium">Metadata exploration is being optimized for large instances.</p>
-                                    </div>
-                                </div>
-                            )}
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={4} className="px-10 py-40 text-center">
+                                                    <div className="max-w-xs mx-auto space-y-4">
+                                                        <div className="w-20 h-20 rounded-[2rem] bg-emerald-50 flex items-center justify-center mx-auto text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                                            <Zap className="w-8 h-8" />
+                                                        </div>
+                                                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">API is Connected</h4>
+                                                        <p className="text-xs text-slate-400 font-medium leading-relaxed">The connection to Moodle is active, but there are no enrolled students to analyze in this course.</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
