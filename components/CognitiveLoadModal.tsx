@@ -99,19 +99,19 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                 onClick={onClose}
             />
             
-            <div className="relative w-full max-w-7xl max-h-[92vh] bg-white rounded-[56px] shadow-[0_32px_120px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-500 border border-white/20">
+            <div className="relative w-full max-w-7xl max-h-[96vh] md:max-h-[92vh] bg-white rounded-[32px] md:rounded-[56px] shadow-[0_32px_120px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col animate-in zoom-in-95 fade-in duration-500 border border-white/20">
                 
                 {/* Modern Header */}
-                <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 relative overflow-hidden">
+                <div className="p-4 md:p-10 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500" />
                     
-                    <div className="flex items-center gap-8 relative z-10">
-                        <div className="w-20 h-20 rounded-[32px] bg-indigo-600 flex items-center justify-center text-white shadow-[0_12px_40px_rgba(79,70,229,0.4)] relative group overflow-hidden">
+                    <div className="flex items-center gap-3 md:gap-8 relative z-10">
+                        <div className="w-10 h-10 md:w-20 md:h-20 rounded-xl md:rounded-[32px] bg-indigo-600 flex items-center justify-center text-white shadow-lg relative group overflow-hidden shrink-0">
                             <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-                            <Brain className="w-10 h-10 relative z-10 group-hover:scale-110 transition-transform" />
+                            <Brain className="w-5 h-5 md:w-10 md:h-10 relative z-10" />
                         </div>
-                        <div>
-                            <h2 className="text-4xl font-black text-slate-900 tracking-tight leading-none">{t('cognitiveLoad.title')}</h2>
+                        <div className="max-w-[70%] md:max-w-none">
+                            <h2 className="text-lg md:text-4xl font-black text-slate-900 tracking-tight leading-tight">{t('cognitiveLoad.title')}</h2>
                             <div className="mt-4 flex items-center gap-3">
                                 <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-200 shadow-sm">
                                     <User className="w-4 h-4 text-slate-400" />
@@ -134,20 +134,20 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                        <button className="p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-[24px] text-slate-400 transition-all hover:text-indigo-600 shadow-sm">
-                            <Share2 className="w-6 h-6" />
+                    <div className="flex items-center gap-2 absolute top-4 right-4 md:relative md:top-0 md:right-0">
+                        <button className="hidden sm:block p-2 md:p-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl md:rounded-[24px] text-slate-400 shadow-sm">
+                            <Share2 className="w-4 h-4 md:w-6 md:h-6" />
                         </button>
                         <button 
                             onClick={onClose}
-                            className="p-4 bg-slate-900 hover:bg-slate-800 rounded-[24px] text-white transition-all shadow-xl active:scale-95 group"
+                            className="p-2 md:p-4 bg-slate-900 hover:bg-slate-800 rounded-xl md:rounded-[24px] text-white shadow-xl active:scale-95 group"
                         >
-                            <XCircle className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" />
+                            <XCircle className="w-5 h-5 md:w-6 md:h-6" />
                         </button>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-12 custom-scrollbar space-y-16">
+                <div className="flex-1 overflow-y-auto p-4 md:p-12 custom-scrollbar space-y-8 md:space-y-16">
                     
                     {!selectedId ? (
                         <div className="h-[400px] flex flex-col items-center justify-center">
@@ -243,7 +243,7 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-3 px-2">
                                 <Layers className="w-4 h-4 text-indigo-500" /> {t('cognitiveLoad.equation')}
                             </h3>
-                            <div className="bg-indigo-600 rounded-[48px] p-10 text-white shadow-2xl relative overflow-hidden group">
+                            <div className="bg-indigo-600 rounded-[32px] md:rounded-[48px] p-6 md:p-10 text-white shadow-2xl relative overflow-hidden group">
                                 <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/10 blur-[80px] -mr-32 -mb-32 rounded-full group-hover:scale-150 transition-transform duration-1000" />
                                 <div className="relative z-10">
                                     <div className="flex items-center justify-between mb-10">
@@ -304,16 +304,16 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                     {/* Detailed Data Table */}
                     <section className="space-y-6">
                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-3 px-2">
-                            <Activity className="w-4 h-4 text-indigo-400" /> Sincronización Moodle en Tiempo Real
+                            <Activity className="w-4 h-4 text-indigo-400" /> Real-time Moodle Synchronization
                         </h3>
-                        <div className="bg-white rounded-[48px] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
-                            <table className="w-full text-left border-collapse">
+                        <div className="bg-white rounded-[32px] md:rounded-[48px] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[600px] md:min-w-0">
                                 <thead className="bg-slate-50 border-b border-slate-100 text-[10px] uppercase font-black text-slate-400 tracking-[0.3em]">
                                     <tr>
-                                        <th className="px-10 py-6">Métrica Proxy</th>
-                                        <th className="px-10 py-6">Ecuación</th>
-                                        <th className="px-10 py-6">Fuente REST</th>
-                                        <th className="px-10 py-6 text-right">Resultado</th>
+                                        <th className="px-4 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px]">Proxy Metric</th>
+                                        <th className="px-4 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px]">Equation</th>
+                                        <th className="px-4 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px]">REST Source</th>
+                                        <th className="px-4 md:px-10 py-4 md:py-6 text-[9px] md:text-[10px] text-right">Result</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50 text-[11px] font-bold">
@@ -325,11 +325,12 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                                         { name: 'LowProgress', eq: '1 - (DoneTasks / TotalTasks)', source: 'core_completion_get_activities', val: data?.features.lowProgress },
                                         { name: 'GradeDrop', eq: 'HistoricAvg - LastScore', source: 'gradereport_user_get_grade_items', val: data?.features.gradeDrop },
                                     ].map((v) => (
+                                    ].map((v) => (
                                         <tr key={v.name} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-10 py-6 text-indigo-600 font-mono">{v.name}</td>
-                                            <td className="px-10 py-6 text-slate-500">{v.eq}</td>
-                                            <td className="px-10 py-6 text-slate-400 font-mono text-[9px] uppercase">{v.source}</td>
-                                            <td className="px-10 py-6 text-right font-mono text-slate-900">
+                                            <td className="px-4 md:px-10 py-4 md:py-6 text-indigo-600 font-mono text-[10px] md:text-xs">{v.name}</td>
+                                            <td className="px-4 md:px-10 py-4 md:py-6 text-slate-500 text-[10px] md:text-xs">{v.eq}</td>
+                                            <td className="px-4 md:px-10 py-4 md:py-6 text-slate-400 font-mono text-[8px] md:text-[9px] uppercase">{v.source}</td>
+                                            <td className="px-4 md:px-10 py-4 md:py-6 text-right font-mono text-slate-900 text-[10px] md:text-xs">
                                                 {v.val !== undefined ? (
                                                     <span className={v.val > 0.6 ? 'text-rose-500' : v.val > 0.3 ? 'text-amber-500' : 'text-emerald-500'}>
                                                         {v.val.toFixed(2)}
@@ -350,7 +351,7 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-3 px-2">
                                 <Sparkles className="w-4 h-4 text-amber-500" /> {t('cognitiveLoad.limitations')}
                             </h3>
-                            <div className="bg-slate-900 rounded-[48px] p-10 text-white h-full relative overflow-hidden">
+                            <div className="bg-slate-900 rounded-[32px] md:rounded-[48px] p-6 md:p-10 text-white h-full relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 blur-3xl -mr-16 -mt-16 rounded-full" />
                                 <div className="relative z-10 space-y-8">
                                     <div className="flex items-center gap-4">
@@ -364,9 +365,9 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                                     </p>
                                     <div className="space-y-4 pt-8 border-t border-white/5">
                                         {[
-                                            { label: 'Data Latency', desc: 'Sincronización API cada 10 seg' },
-                                            { label: 'Signal Confidence', desc: 'Muestreo por actividad Moodle' },
-                                            { label: 'Privacy Bound', desc: 'No se captura navegación externa' },
+                                            { label: 'Data Latency', desc: 'API Sync every 10 sec' },
+                                            { label: 'Signal Confidence', desc: 'Sampling by Moodle activity' },
+                                            { label: 'Privacy Bound', desc: 'No external navigation captured' },
                                         ].map(l => (
                                             <div key={l.label} className="flex items-center justify-between">
                                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{l.label}</span>
@@ -383,7 +384,7 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-3 px-2">
                                 <Sliders className="w-4 h-4 text-indigo-500" /> {t('cognitiveLoad.simulator')}
                             </h3>
-                            <div className="bg-white rounded-[48px] border border-slate-100 p-10 shadow-2xl shadow-slate-200/50">
+                            <div className="bg-white rounded-[32px] md:rounded-[48px] border border-slate-100 p-6 md:p-10 shadow-2xl shadow-slate-200/50">
                                 <div className="flex items-center justify-between mb-12">
                                     <div>
                                         <h4 className="text-lg font-black text-slate-900">{t('cognitiveLoad.simulatorDesc')}</h4>
@@ -392,7 +393,7 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                                     <div className="text-right">
                                         <p className="text-4xl font-black text-indigo-600 tracking-tighter">{(simResult.score * 100).toFixed(1)}%</p>
                                         <p className={`text-[10px] font-black uppercase tracking-[0.2em] mt-1 ${
-                                            simResult.level === 'Alta' ? 'text-rose-500' : 'text-emerald-500'
+                                            simResult.level === 'High' || simResult.level === 'Alta' ? 'text-rose-500' : 'text-emerald-500'
                                         }`}>{getLevelText(simResult.level)}</p>
                                     </div>
                                 </div>
@@ -405,8 +406,8 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                                         { id: 'lowProgress', label: 'LowProgress', color: 'accent-rose-600' },
                                         { id: 'nonCompletionRisk', label: 'NonCompletionRisk', color: 'accent-purple-600' },
                                     ].map((s) => (
-                                        <div key={s.id} className="space-y-4">
-                                            <div className="flex justify-between text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                                        <div key={s.id} className="space-y-3">
+                                            <div className="flex justify-between text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest">
                                                 <label>{s.label}</label>
                                                 <span className="text-slate-900 font-mono">{(simValues as any)[s.id].toFixed(2)}</span>
                                             </div>
