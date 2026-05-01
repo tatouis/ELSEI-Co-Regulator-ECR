@@ -105,31 +105,32 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                 <div className="p-4 md:p-10 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500" />
                     
-                    <div className="flex items-center gap-3 md:gap-8 relative z-10">
-                        <div className="w-10 h-10 md:w-20 md:h-20 rounded-xl md:rounded-[32px] bg-indigo-600 flex items-center justify-center text-white shadow-lg relative group overflow-hidden shrink-0">
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-                            <Brain className="w-5 h-5 md:w-10 md:h-10 relative z-10" />
-                        </div>
-                        <div className="max-w-[70%] md:max-w-none">
+                    <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 relative z-10 w-full md:w-auto">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 md:w-20 md:h-20 rounded-xl md:rounded-[32px] bg-indigo-600 flex items-center justify-center text-white shadow-lg relative group overflow-hidden shrink-0">
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+                                <Brain className="w-5 h-5 md:w-10 md:h-10 relative z-10" />
+                            </div>
                             <h2 className="text-lg md:text-4xl font-black text-slate-900 tracking-tight leading-tight">{t('cognitiveLoad.title')}</h2>
-                            <div className="mt-4 flex items-center gap-3">
-                                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                                    <User className="w-4 h-4 text-slate-400" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('cognitiveLoad.selectStudent')}</span>
-                                    <select 
-                                        value={selectedId || ''} 
-                                        onChange={(e) => setSelectedId(e.target.value)}
-                                        className="bg-transparent border-none text-sm font-black text-indigo-600 focus:ring-0 cursor-pointer pr-8"
-                                    >
-                                        <option value="">{t('common.search')}...</option>
-                                        {students?.map((s) => (
-                                            <option key={s.id} value={s.id}>{s.fullname || s.username}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="px-4 py-2 rounded-2xl bg-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200/50">
-                                    Mode: API-ONLY v1.0
-                                </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                            <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm max-w-full overflow-hidden">
+                                <User className="w-4 h-4 text-slate-400 shrink-0" />
+                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 shrink-0">{t('cognitiveLoad.selectStudent')}</span>
+                                <select 
+                                    value={selectedId || ''} 
+                                    onChange={(e) => setSelectedId(e.target.value)}
+                                    className="bg-transparent border-none text-xs md:text-sm font-black text-indigo-600 focus:ring-0 cursor-pointer pr-6 truncate"
+                                >
+                                    <option value="">{t('common.search')}...</option>
+                                    {students?.map((s) => (
+                                        <option key={s.id} value={s.id}>{s.fullname || s.username}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="px-3 md:px-4 py-2 rounded-xl md:rounded-2xl bg-slate-100 text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200/50">
+                                Mode: API-ONLY v1.0
                             </div>
                         </div>
                     </div>
