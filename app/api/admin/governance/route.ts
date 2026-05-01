@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 
       // 2. Course-level metadata
       const courses = await fetchMoodle('core_course_get_courses');
-      const realCourses = Array.isArray(courses) ? courses.filter((c: any) => c.id !== 1).slice(0, 10) : [];
+      const realCourses = Array.isArray(courses) ? courses.filter((c: any) => c.id !== 1) : [];
       sampleData.Courses = realCourses;
 
       const courseId = requestedCourseId ? parseInt(requestedCourseId) : (realCourses.length > 0 ? realCourses[0].id : null);
