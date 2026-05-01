@@ -325,7 +325,6 @@ export default function CognitiveLoadModal({ isOpen, onClose, courseId, studentI
                                         { name: 'LowProgress', eq: '1 - (DoneTasks / TotalTasks)', source: 'core_completion_get_activities', val: data?.features.lowProgress },
                                         { name: 'GradeDrop', eq: 'HistoricAvg - LastScore', source: 'gradereport_user_get_grade_items', val: data?.features.gradeDrop },
                                     ].map((v) => (
-                                    ].map((v) => (
                                         <tr key={v.name} className="hover:bg-slate-50/50 transition-colors">
                                             <td className="px-4 md:px-10 py-4 md:py-6 text-indigo-600 font-mono text-[10px] md:text-xs">{v.name}</td>
                                             <td className="px-4 md:px-10 py-4 md:py-6 text-slate-500 text-[10px] md:text-xs">{v.eq}</td>
